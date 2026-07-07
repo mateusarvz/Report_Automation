@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Report Psicologia</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="page-center">
+        <div class="card">
+            <h1>Retornando do login</h1>
+            <p>Finalizando autenticação...</p>
+        </div>
+    </div>
+    <script>
+        async function getHashParams() {
+            const hash = window.location.hash.substring(1);
+            const params = {};
+            for (const part of hash.split('&')) {
+                const equalIndex = part.indexOf('=');
+                if (equalIndex === -1) continue;
+                const key = decodeURIComponent(part.slice(0, equalIndex));
+                const value = decodeURIComponent(part.slice(equalIndex + 1));
+                params[key] = value;
+            }
+            return params;
+        }
+
+        async function init() {
+            const params = await getHashParams();
+            if (!params.access_token) {
+                document.body.innerHTML = '<div class="page-center"><div class="card"><h1>Erro</h1><p>Não foi possível obter access_token.</p></div></div>';
+                return;
+            }
+
+            const response = await fetch('/auth/session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ access_token: params.access_token }),
+            });
+
+            if (response.ok) {
+                window.location.href = '/';
+            } else {
+                const error = await response.json();
+                document.body.innerHTML = `<div class="page-center"><div class="card"><h1>Erro</h1><p>${error.error || 'Falha ao autenticar.'}</p></div></div>`;
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

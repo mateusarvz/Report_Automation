@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Home - Report Psicologia</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">Report Psicologia</div>
+            <nav>
+                <a class="active" href="#account">Dados da conta</a>
+                <a href="#patients">Dados dos Pacientes</a>
+            </nav>
+        </aside>
+        <main class="content">
+            <header class="topbar">
+                <div>Bem-vindo, {{ user.full_name or user.email }}</div>
+                <a class="logout" href="/logout">Sair</a>
+            </header>
+            <section id="account" class="section">
+                <h2>Dados da conta</h2>
+                <div class="card-grid">
+                    <div class="card-item">
+                        <strong>E-mail</strong>
+                        <p>{{ user.email }}</p>
+                    </div>
+                    <div class="card-item">
+                        <strong>Nome</strong>
+                        <p>{{ user.full_name or "-" }}</p>
+                    </div>
+                    <div class="card-item">
+                        <strong>Avatar</strong>
+                        <p>
+                            {% if user.picture %}
+                                <img class="avatar" src="{{ user.picture }}" alt="Avatar" />
+                            {% else %}
+                                Não disponível
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </section>
+            <section id="patients" class="section">
+                <h2>Dados dos Pacientes</h2>
+                <p>Esta seção ficará vazia por enquanto.</p>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
