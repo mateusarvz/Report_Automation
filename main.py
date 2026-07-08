@@ -24,6 +24,7 @@ load_dotenv(".env.local", override=True)
 SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 NEXT_PUBLIC_SITE_URL = os.getenv("NEXT_PUBLIC_SITE_URL")
 LOCAL_REDIRECT_TO = os.getenv("LOCAL_REDIRECT_TO")
+RENDER_EXTERNAL_URL = os.getenv("RENDER_EXTERNAL_URL")
 SESSION_SECRET_KEY = os.getenv("SESSION_SECRET_KEY", "change-me-in-production")
 
 if not SUPABASE_URL:
@@ -50,16 +51,22 @@ def get_current_user(request: Request):
 
 
 def get_auth_redirect_url(request: Request):
-    if LOCAL_REDIRECT_TO:
-        return LOCAL_REDIRECT_TO.replace("localhost", "127.0.0.1")
-
     forwarded_proto = request.headers.get("x-forwarded-proto") or request.headers.get("x-forwarded-protocol")
     forwarded_host = request.headers.get("x-forwarded-host") or request.headers.get("host")
-    if forwarded_proto and forwarded_host:
+    if forwarded_proto and forwarded_host and "localhost" not in forwarded_host:
         return f"{forwarded_proto.split(',')[0]}://{forwarded_host.split(',')[0]}/auth/callback"
 
-    if NEXT_PUBLIC_SITE_URL:
+    if RENDER_EXTERNAL_URL:
+        return RENDER_EXTERNAL_URL.rstrip("/") + "/auth/callback"
+
+    if NEXT_PUBLIC_SITE_URL and "localhost" not in NEXT_PUBLIC_SITE_URL:
         return NEXT_PUBLIC_SITE_URL.rstrip("/") + "/auth/callback"
+
+    if LOCAL_REDIRECT_TO and "localhost" not in LOCAL_REDIRECT_TO:
+        return LOCAL_REDIRECT_TO.rstrip("/") + "/auth/callback"
+
+    if LOCAL_REDIRECT_TO:
+        return LOCAL_REDIRECT_TO.replace("localhost", "127.0.0.1")
 
     redirect_url = request.url_for("auth_callback")
     return str(redirect_url).replace("localhost", "127.0.0.1")
