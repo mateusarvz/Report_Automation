@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastrar Paciente - Report Psicologia</title>
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="brand">Report Psicologia</div>
+            <nav>
+                <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Gerar Relatório</a>
+                <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Cadastrar Paciente</a>
+                <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Dados da conta</a>
+                <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Dados dos Pacientes</a>
+            </nav>
+        </aside>
+        <main class="content">
+            <header class="topbar">
+                <div>Cadastrar Paciente</div>
+                <a class="logout" href="/logout">Sair</a>
+            </header>
+
+            <section class="section">
+                <h2>Novo Paciente</h2>
+                <form id="patient-form" class="form-card form-rounded">
+                    <div class="form-row">
+                        <label for="full_name">Nome completo</label>
+                        <input id="full_name" name="full_name" type="text" required placeholder="Digite aqui o nome do paciente" />
+                    </div>
+                    <div class="form-row two-cols">
+                        <div class="field-col">
+                            <label for="birth_date">Data de nascimento</label>
+                            <input id="birth_date" name="birth_date" type="text" placeholder="dd/mm/aaaa" />
+                        </div>
+                        <div class="field-col">
+                            <label for="gender">Gênero</label>
+                            <select id="gender" name="gender">
+                                <option value="">Selecione</option>
+                                <option value="F">Feminino</option>
+                                <option value="M">Masculino</option>
+                                <option value="O">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row two-cols">
+                        <div class="field-col">
+                            <label for="phone">Número do responsável</label>
+                            <input id="phone" name="phone" type="tel" placeholder="(99) 99999-9999" />
+                        </div>
+                        <div class="field-col">
+                            <label for="email">Email do responsável</label>
+                            <input id="email" name="email" type="email" placeholder="responsavel@email.com" />
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="button primary" type="submit">Cadastrar</button>
+                        <p id="patient-form-message" class="form-message"></p>
+                    </div>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function parseDateDMY(value) {
+            // expects dd/mm/yyyy -> returns yyyy-mm-dd or null
+            if (!value) return null;
+            const m = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!m) return null;
+            const dd = m[1];
+            const mm = m[2];
+            const yyyy = m[3];
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        async function handlePatientForm(event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const message = document.getElementById('patient-form-message');
+            message.textContent = '';
+            let birth = form.birth_date.value || '';
+            let birth_iso = parseDateDMY(birth) || null;
+            // If user entered ISO directly, accept it
+            if (!birth_iso && birth.match(/^\d{4}-\d{2}-\d{2}$/)) birth_iso = birth;
+
+            const data = {
+                full_name: form.full_name.value.trim(),
+                birth_date: birth_iso,
+                gender: form.gender.value || null,
+                phone: form.phone.value.trim() || null,
+                email: form.email.value.trim() || null,
+            };
+            if (!data.full_name) {
+                message.textContent = 'Nome completo é obrigatório.';
+                return;
+            }
+            try {
+                const res = await fetch('/api/patients', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+                if (!res.ok) {
+                    let errText = 'Erro';
+                    try {
+                        const body = await res.json();
+                        errText = body.error || body.detail || JSON.stringify(body);
+                    } catch (_) {
+                        errText = await res.text();
+                    }
+                    if (res.status === 409) {
+                        errText = errText || 'Paciente com mesmo nome já existe.';
+                    }
+                    throw new Error(errText);
+                }
+                message.textContent = 'Paciente cadastrado.';
+                form.reset();
+            } catch (e) {
+                message.textContent = e.message || 'Erro desconhecido.';
+                console.error(e);
+            }
+        }
+
+        document.getElementById('patient-form').addEventListener('submit', handlePatientForm);
+    </script>
+</body>
+</html>

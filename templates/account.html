@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Home - Report Psicologia</title>
+    <title>Dados da Conta - Report Psicologia</title>
     <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
@@ -11,17 +11,20 @@
         <aside class="sidebar">
             <div class="brand">Report Psicologia</div>
             <nav>
-                <a class="active" href="#account">Dados da conta</a>
-                <a href="#patients">Dados dos Pacientes</a>
+                <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Gerar Relatório</a>
+                <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Cadastrar Paciente</a>
+                <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Dados da conta</a>
+                <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Dados dos Pacientes</a>
             </nav>
         </aside>
         <main class="content">
             <header class="topbar">
-                <div>Bem-vindo, {{ user.full_name or user.email }}</div>
+                <div>Dados da Conta</div>
                 <a class="logout" href="/logout">Sair</a>
             </header>
-            <section id="account" class="section">
-                <h2>Dados da conta</h2>
+
+            <section class="section">
+                <h2>Perfil</h2>
                 <div class="card-grid">
                     <div class="card-item">
                         <strong>E-mail</strong>
@@ -29,7 +32,7 @@
                     </div>
                     <div class="card-item">
                         <strong>Nome</strong>
-                        <p>{{ user.full_name or "-" }}</p>
+                        <p>{{ user.full_name or '-' }}</p>
                     </div>
                     <div class="card-item">
                         <strong>Avatar</strong>
@@ -42,10 +45,6 @@
                         </p>
                     </div>
                 </div>
-            </section>
-            <section id="patients" class="section">
-                <h2>Dados dos Pacientes</h2>
-                <p>Esta seção ficará vazia por enquanto.</p>
             </section>
         </main>
     </div>

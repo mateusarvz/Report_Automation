@@ -127,10 +127,8 @@ create table if not exists public.patients (
     full_name text not null,
     birth_date date,
     gender text,
-    cpf text,
     phone text,
     email text,
-    notes text,
     created_at timestamptz default now(),
     updated_at timestamptz default now()
 );

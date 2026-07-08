@@ -22,6 +22,7 @@ copy .env.example .env
    - `SUPABASE_SERVICE_ROLE_KEY` ou `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `NEXT_PUBLIC_SITE_URL=http://localhost:8000`
    - `LOCAL_REDIRECT_TO=http://localhost:8000/auth/callback`
+   - No Render, defina `NEXT_PUBLIC_SITE_URL=https://report-automation-tcht.onrender.com`
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
    - `GOOGLE_REDIRECT_URI=https://xhfhojoyphdfozqqhxsg.supabase.co/auth/v1/callback`
