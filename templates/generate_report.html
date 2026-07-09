@@ -9,31 +9,65 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <div class="brand">Report Psicologia</div>
-            <nav>
-                <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Gerar Relatório</a>
-                <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Cadastrar Paciente</a>
-                <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Dados da conta</a>
-                <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Dados dos Pacientes</a>
-            </nav>
+            <div>
+                <div class="brand-row">
+                    <img class="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="Logo CogniReports" />
+                    <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
+                </div>
+                <nav>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
+                    <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
+                    <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
+                    <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
+                </nav>
+            </div>
         </aside>
         <main class="content">
-            <header class="topbar">
-                <div>Gerar Relatório</div>
-                <a class="logout" href="/logout">Sair</a>
-            </header>
+            <div class="topbar">
+                <section class="page-header">
+                    <img class="page-icon-image" src="/static/assets/icons/nova-avaliacao.png" alt="Ícone de Nova Avaliação" />
+                    <div>
+                        <h1>Nova Avaliação</h1>
+                    </div>
+                </section>
+                <div class="user-menu" id="user-menu">
+                    <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <div class="user-menu-text">
+                            <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
+                            {% set subtitle = '' %}
+                            {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Psicólogo' %}
+                            {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Psicóloga' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Neuropsicólogo' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% endif %}
+                            {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
+                        </div>
+                        <span class="user-menu-caret">▾</span>
+                    </button>
+                    <div class="user-menu-dropdown" id="user-menu-dropdown">
+                        <a href="/logout">Sair</a>
+                    </div>
+                </div>
+            </div>
 
-            <section class="section">
-                <h2>Gerar Relatório</h2>
-                <p>Selecione paciente abaixo. Relatórios serão gerados em momento futuro.</p>
+            <section class="section" style="padding-top: 16px;">
                 <div class="form-card">
                     <label for="report-patient">Paciente</label>
                     <select id="report-patient">
                         <option>Carregando pacientes...</option>
                     </select>
-                    <p class="help-text">Apenas pacientes vinculados à sua conta.</p>
-                    <div style="margin-top:16px">
-                        <button class="button" id="generate-btn" disabled>Gerar (placeholder)</button>
+                    <label for="report-type">Tipo de relatório</label>
+                    <select id="report-type">
+                        <option>Carregando tipos...</option>
+                    </select>
+                    <div id="report-fields"></div>
+                    <div>
+                        <button class="button" id="generate-btn" disabled>Carregar Relatório</button>
                     </div>
                 </div>
             </section>
@@ -59,7 +93,7 @@
                     select.appendChild(opt);
                 });
                 select.disabled = false;
-                document.getElementById('generate-btn').disabled = false;
+                updateGenerateButtonState();
             } catch (e) {
                 select.innerHTML = '<option>Erro ao carregar</option>';
                 select.disabled = true;
@@ -67,9 +101,143 @@
             }
         }
 
-        document.getElementById('generate-btn').addEventListener('click', () => {
-            alert('Placeholder: geração de relatório implementada futuramente.');
+        async function loadReportTypes() {
+            const select = document.getElementById('report-type');
+            try {
+                const res = await fetch('/api/report-types');
+                if (!res.ok) throw new Error('failed');
+                const types = await res.json();
+                select.innerHTML = '';
+                if (!Array.isArray(types) || types.length === 0) {
+                    select.disabled = true;
+                    select.innerHTML = '<option>Nenhum relatório disponível</option>';
+                    return;
+                }
+                types.forEach(type => {
+                    const opt = document.createElement('option');
+                    opt.value = type;
+                    opt.textContent = type;
+                    select.appendChild(opt);
+                });
+                select.disabled = false;
+                updateGenerateButtonState();
+            } catch (e) {
+                select.innerHTML = '<option>Erro ao carregar</option>';
+                select.disabled = true;
+                console.error(e);
+            }
+        }
+
+        async function loadReportFields(reportName) {
+            const fieldsContainer = document.getElementById('report-fields');
+            fieldsContainer.innerHTML = '';
+            if (!reportName) {
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/report-fields?report_name=${encodeURIComponent(reportName)}`);
+                if (!res.ok) throw new Error('failed');
+                const fields = await res.json();
+                if (!Array.isArray(fields) || fields.length === 0) {
+                    return;
+                }
+
+                fields.forEach(field => {
+                    const fieldWrapper = document.createElement('div');
+                    fieldWrapper.className = 'form-row';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = field.name;
+                    label.textContent = field.label;
+                    fieldWrapper.appendChild(label);
+
+                    const input = document.createElement('input');
+                    input.type = field.type || 'text';
+                    input.id = field.name;
+                    input.name = field.name;
+                    input.placeholder = field.placeholder || '';
+                    if (field.required) input.required = true;
+                    fieldWrapper.appendChild(input);
+
+                    fieldsContainer.appendChild(fieldWrapper);
+                });
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateGenerateButtonState() {
+            const patientSelect = document.getElementById('report-patient');
+            const reportSelect = document.getElementById('report-type');
+            const button = document.getElementById('generate-btn');
+            button.disabled = !patientSelect.value || !reportSelect.value;
+        }
+
+        document.getElementById('report-patient').addEventListener('change', updateGenerateButtonState);
+        document.getElementById('report-type').addEventListener('change', async (event) => {
+            updateGenerateButtonState();
+            await loadReportFields(event.target.value);
         });
+
+        document.getElementById('generate-btn').addEventListener('click', async () => {
+            const patientId = document.getElementById('report-patient').value;
+            const reportName = document.getElementById('report-type').value;
+            const inputValue = document.getElementById('tac2_input') ? document.getElementById('tac2_input').value : null;
+            try {
+                const res = await fetch('/api/reports', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ patient_id: patientId, report_name: reportName, input_data: { tac2_input: inputValue } }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || 'Erro ao gerar relatório');
+                }
+                loadReportInterface(reportName);
+            } catch (error) {
+                alert(error.message || 'Erro ao gerar relatório');
+                console.error(error);
+            }
+        });
+
+        function loadReportInterface(reportName) {
+            const section = document.createElement('section');
+            section.className = 'section';
+            section.id = 'tac2-interface-section';
+            section.innerHTML = `
+                <div class="form-card">
+                    <h2>${reportName}</h2>
+                    <div class="form-row">
+                        <label>Entrada TAC 2</label>
+                        <input id="tac2_input" type="text" placeholder="Digite um valor para TAC 2" />
+                    </div>
+                    <p>Para TAC 2, por enquanto nenhuma ação será feita com este valor.</p>
+                </div>
+            `;
+
+            const existing = document.getElementById('tac2-interface-section');
+            if (existing) {
+                existing.replaceWith(section);
+            } else {
+                document.querySelector('main.content').appendChild(section);
+            }
+        }
+
+        const userMenu = document.getElementById('user-menu');
+        const userMenuToggle = document.getElementById('user-menu-toggle');
+        if (userMenu && userMenuToggle) {
+            userMenuToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                userMenu.classList.toggle('open');
+                userMenuToggle.setAttribute('aria-expanded', String(userMenu.classList.contains('open')));
+            });
+
+            document.addEventListener('click', () => {
+                userMenu.classList.remove('open');
+                userMenuToggle.setAttribute('aria-expanded', 'false');
+            });
+        }
 
         loadPatients();
     </script>

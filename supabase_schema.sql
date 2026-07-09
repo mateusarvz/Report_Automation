@@ -1,11 +1,12 @@
--- =====================================================
--- EXTENSÕES
+﻿-- =====================================================
+-- SCHEMA MINIMAL PARA O SITE
+-- Login via Supabase Auth + profile + pacientes
 -- =====================================================
 
 create extension if not exists pgcrypto;
 
 -- =====================================================
--- PROFILES (PSICÓLOGOS)
+-- PROFILES
 -- =====================================================
 
 create table if not exists public.profiles (
@@ -13,109 +14,80 @@ create table if not exists public.profiles (
     email text not null unique,
     full_name text,
     photo_url text,
-    phone text,
-    crp text,
-    status text default 'ACTIVE',
-    created_at timestamptz default now(),
-    updated_at timestamptz default now(),
+    profession text,
+    phone text check (phone is null or phone ~ '^\(\d{2}\)\s?\d{4,5}-\d{4}$'),
+    gender text check (gender is null or gender in ('Masculino', 'Feminino', 'Outro')),
+    role text not null default 'user' check (role in ('admin', 'psychologist', 'user')),
+    status text not null default 'active' check (status in ('active', 'inactive', 'pending', 'suspended')),
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
     last_login timestamptz
 );
 
 alter table public.profiles enable row level security;
 
-drop policy if exists "Profiles Select Own" on public.profiles;
-drop policy if exists "Profiles Insert Own" on public.profiles;
-drop policy if exists "Profiles Update Own" on public.profiles;
+alter table public.profiles
+    add column if not exists profession text;
 
-create policy "Profiles Select Own"
+alter table public.profiles
+    add column if not exists phone text;
+
+alter table public.profiles
+    add column if not exists gender text;
+
+alter table public.profiles
+    add column if not exists role text default 'user';
+
+alter table public.profiles
+    add column if not exists status text default 'active';
+
+alter table public.profiles
+    drop constraint if exists profiles_phone_format_check;
+
+alter table public.profiles
+    add constraint profiles_phone_format_check
+    check (phone is null or phone ~ '^\(\d{2}\)\s?\d{4,5}-\d{4}$');
+
+alter table public.profiles
+    drop constraint if exists profiles_gender_check;
+
+alter table public.profiles
+    add constraint profiles_gender_check
+    check (gender is null or gender in ('Masculino', 'Feminino', 'Outro'));
+
+alter table public.profiles
+    drop constraint if exists profiles_role_check;
+
+alter table public.profiles
+    add constraint profiles_role_check
+    check (role in ('admin', 'psychologist', 'user'));
+
+alter table public.profiles
+    drop constraint if exists profiles_status_check;
+
+alter table public.profiles
+    add constraint profiles_status_check
+    check (status in ('active', 'inactive', 'pending', 'suspended'));
+
+drop policy if exists "profiles_select_own" on public.profiles;
+drop policy if exists "profiles_insert_own" on public.profiles;
+drop policy if exists "profiles_update_own" on public.profiles;
+
+create policy "profiles_select_own"
 on public.profiles
 for select
 using (auth.uid() = id);
 
-create policy "Profiles Insert Own"
+create policy "profiles_insert_own"
 on public.profiles
 for insert
 with check (auth.uid() = id);
 
-create policy "Profiles Update Own"
+create policy "profiles_update_own"
 on public.profiles
 for update
-using (auth.uid() = id);
-
--- =====================================================
--- PLANS
--- =====================================================
-
-create table if not exists public.plans (
-    id uuid primary key default gen_random_uuid(),
-    name text not null,
-    description text,
-    monthly_price numeric(10,2) not null,
-    reports_limit integer,
-    active boolean default true,
-    created_at timestamptz default now()
-);
-
-alter table public.plans enable row level security;
-
-drop policy if exists "Plans Read Public" on public.plans;
-
-create policy "Plans Read Public"
-on public.plans
-for select
-using (true);
-
--- =====================================================
--- SUBSCRIPTIONS
--- =====================================================
-
-create table if not exists public.subscriptions (
-    id uuid primary key default gen_random_uuid(),
-    psychologist_id uuid not null references public.profiles(id) on delete cascade,
-    plan_id uuid references public.plans(id),
-    status text default 'ACTIVE',
-    gateway text,
-    gateway_subscription_id text,
-    started_at timestamptz,
-    expires_at timestamptz,
-    created_at timestamptz default now()
-);
-
-alter table public.subscriptions enable row level security;
-
-drop policy if exists "Subscriptions Own" on public.subscriptions;
-
-create policy "Subscriptions Own"
-on public.subscriptions
-for all
-using (psychologist_id = auth.uid())
-with check (psychologist_id = auth.uid());
-
--- =====================================================
--- PAYMENTS
--- =====================================================
-
-create table if not exists public.payments (
-    id uuid primary key default gen_random_uuid(),
-    subscription_id uuid references public.subscriptions(id) on delete cascade,
-    psychologist_id uuid not null references public.profiles(id) on delete cascade,
-    amount numeric(10,2),
-    payment_method text,
-    gateway_payment_id text,
-    status text,
-    paid_at timestamptz,
-    created_at timestamptz default now()
-);
-
-alter table public.payments enable row level security;
-
-drop policy if exists "Payments Own" on public.payments;
-
-create policy "Payments Own"
-on public.payments
-for all
-using (psychologist_id = auth.uid())
-with check (psychologist_id = auth.uid());
+using (auth.uid() = id)
+with check (auth.uid() = id);
 
 -- =====================================================
 -- PATIENTS
@@ -129,141 +101,43 @@ create table if not exists public.patients (
     gender text,
     phone text,
     email text,
-    created_at timestamptz default now(),
-    updated_at timestamptz default now()
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
 );
 
 alter table public.patients enable row level security;
 
-drop policy if exists "Patients Own" on public.patients;
+drop policy if exists "patients_select_own" on public.patients;
+drop policy if exists "patients_insert_own" on public.patients;
+drop policy if exists "patients_update_own" on public.patients;
+drop policy if exists "patients_delete_own" on public.patients;
 
-create policy "Patients Own"
+create policy "patients_select_own"
 on public.patients
-for all
-using (psychologist_id = auth.uid())
-with check (psychologist_id = auth.uid());
-
--- =====================================================
--- TESTS
--- =====================================================
-
-create table if not exists public.tests (
-    id uuid primary key default gen_random_uuid(),
-    patient_id uuid not null references public.patients(id) on delete cascade,
-    psychologist_id uuid not null references public.profiles(id) on delete cascade,
-    test_type text not null,
-    status text default 'IN_PROGRESS',
-    created_at timestamptz default now(),
-    finished_at timestamptz
-);
-
-alter table public.tests enable row level security;
-
-drop policy if exists "Tests Own" on public.tests;
-
-create policy "Tests Own"
-on public.tests
-for all
-using (psychologist_id = auth.uid())
-with check (psychologist_id = auth.uid());
-
--- =====================================================
--- TEST ANSWERS
--- =====================================================
-
-create table if not exists public.test_answers (
-    id uuid primary key default gen_random_uuid(),
-    test_id uuid not null references public.tests(id) on delete cascade,
-    question text,
-    answer text,
-    score numeric,
-    created_at timestamptz default now()
-);
-
-alter table public.test_answers enable row level security;
-
-drop policy if exists "Answers Own" on public.test_answers;
-
-create policy "Answers Own"
-on public.test_answers
-for all
-using (
-    exists (
-        select 1
-        from public.tests t
-        where t.id = test_answers.test_id
-        and t.psychologist_id = auth.uid()
-    )
-)
-with check (
-    exists (
-        select 1
-        from public.tests t
-        where t.id = test_answers.test_id
-        and t.psychologist_id = auth.uid()
-    )
-);
-
--- =====================================================
--- REPORTS
--- =====================================================
-
-create table if not exists public.reports (
-    id uuid primary key default gen_random_uuid(),
-    patient_id uuid not null references public.patients(id) on delete cascade,
-    psychologist_id uuid not null references public.profiles(id) on delete cascade,
-    test_id uuid references public.tests(id),
-    title text,
-    summary text,
-    pdf_path text,
-    status text default 'GENERATED',
-    created_at timestamptz default now()
-);
-
-alter table public.reports enable row level security;
-
-drop policy if exists "Reports Own" on public.reports;
-
-create policy "Reports Own"
-on public.reports
-for all
-using (psychologist_id = auth.uid())
-with check (psychologist_id = auth.uid());
-
--- =====================================================
--- AUDIT LOGS
--- =====================================================
-
-create table if not exists public.audit_logs (
-    id uuid primary key default gen_random_uuid(),
-    user_id uuid references public.profiles(id) on delete cascade,
-    action text,
-    entity text,
-    entity_id uuid,
-    created_at timestamptz default now()
-);
-
-alter table public.audit_logs enable row level security;
-
-drop policy if exists "Audit Own" on public.audit_logs;
-
-create policy "Audit Own"
-on public.audit_logs
 for select
-using (user_id = auth.uid());
+using (psychologist_id = auth.uid());
+
+create policy "patients_insert_own"
+on public.patients
+for insert
+with check (psychologist_id = auth.uid());
+
+create policy "patients_update_own"
+on public.patients
+for update
+using (psychologist_id = auth.uid())
+with check (psychologist_id = auth.uid());
+
+create policy "patients_delete_own"
+on public.patients
+for delete
+using (psychologist_id = auth.uid());
 
 -- =====================================================
 -- ÍNDICES
 -- =====================================================
 
 create index if not exists idx_patients_psychologist on public.patients(psychologist_id);
-create index if not exists idx_tests_patient on public.tests(patient_id);
-create index if not exists idx_tests_psychologist on public.tests(psychologist_id);
-create index if not exists idx_reports_patient on public.reports(patient_id);
-create index if not exists idx_reports_psychologist on public.reports(psychologist_id);
-create index if not exists idx_answers_test on public.test_answers(test_id);
-create index if not exists idx_subscriptions_psychologist on public.subscriptions(psychologist_id);
-create index if not exists idx_payments_psychologist on public.payments(psychologist_id);
 
 -- =====================================================
 -- TRIGGER PARA CRIAR PROFILE AUTOMATICAMENTE
@@ -281,7 +155,11 @@ begin
         email,
         full_name,
         photo_url,
-        last_login,
+        profession,
+        phone,
+        role,
+        status,
+        created_at,
         updated_at
     )
     values (
@@ -289,15 +167,22 @@ begin
         new.email,
         coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''),
         new.raw_user_meta_data->>'avatar_url',
+        new.raw_user_meta_data->>'profession',
+        new.raw_user_meta_data->>'phone',
+        coalesce(new.raw_user_meta_data->>'role', 'user'),
+        coalesce(new.raw_user_meta_data->>'status', 'active'),
         now(),
         now()
     )
     on conflict (id) do update
     set
         email = excluded.email,
-        full_name = excluded.full_name,
-        photo_url = excluded.photo_url,
-        last_login = now(),
+        full_name = coalesce(excluded.full_name, public.profiles.full_name),
+        photo_url = coalesce(excluded.photo_url, public.profiles.photo_url),
+        profession = coalesce(excluded.profession, public.profiles.profession),
+        phone = coalesce(excluded.phone, public.profiles.phone),
+        role = coalesce(excluded.role, public.profiles.role),
+        status = coalesce(excluded.status, public.profiles.status),
         updated_at = now();
 
     return new;
@@ -307,7 +192,24 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 
 create trigger on_auth_user_created
-after insert
-on auth.users
+after insert on auth.users
 for each row
 execute function public.handle_new_user();
+
+-- =====================================================
+-- FUNÇÃO PARA REGISTRAR O ÚLTIMO LOGIN NO PROFILE
+-- =====================================================
+
+create or replace function public.update_profile_last_login(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    update public.profiles
+    set last_login = now(),
+        updated_at = now()
+    where id = p_user_id;
+end;
+$$;

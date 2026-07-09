@@ -9,30 +9,77 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <div class="brand">Report Psicologia</div>
-            <nav>
-                <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Gerar Relatório</a>
-                <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Cadastrar Paciente</a>
-                <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Dados da conta</a>
-                <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Dados dos Pacientes</a>
-            </nav>
+            <div>
+                <div class="brand-row">
+                    <img class="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="Logo CogniReports" />
+                    <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
+                </div>
+                <nav>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
+                    <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
+                    <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
+                    <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
+                </nav>
+            </div>
         </aside>
         <main class="content">
-            <header class="topbar">
-                <div>Dados da Conta</div>
-                <a class="logout" href="/logout">Sair</a>
-            </header>
+            <div class="topbar">
+                <section class="page-header">
+                    <img class="page-icon-image" src="/static/assets/icons/dados-da-conta.png" alt="Ícone de Dados da Conta" />
+                    <div>
+                        <h1>Dados da Conta</h1>
+                    </div>
+                </section>
+                <div class="user-menu" id="user-menu">
+                    <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <div class="user-menu-text">
+                            <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
+                            {% set subtitle = '' %}
+                            {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Psicólogo' %}
+                            {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Psicóloga' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Neuropsicólogo' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% endif %}
+                            {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
+                        </div>
+                        <span class="user-menu-caret">▾</span>
+                    </button>
+                    <div class="user-menu-dropdown" id="user-menu-dropdown">
+                        <a href="/logout">Sair</a>
+                    </div>
+                </div>
+            </div>
 
             <section class="section">
-                <h2>Perfil</h2>
+                {% if updated %}
+                <p class="form-message" style="color: #15803d; margin-bottom: 12px;">Perfil atualizado com sucesso.</p>
+                {% endif %}
+
                 <div class="card-grid">
+                    <div class="card-item">
+                        <strong>Nome completo</strong>
+                        <p>{{ user.full_name or '-' }}</p>
+                    </div>
+                    <div class="card-item">
+                        <strong>Profissão</strong>
+                        <p>{{ user.profession or '-' }}</p>
+                    </div>
+                    <div class="card-item">
+                        <strong>Gênero</strong>
+                        <p>{{ user.gender or '-' }}</p>
+                    </div>
                     <div class="card-item">
                         <strong>E-mail</strong>
                         <p>{{ user.email }}</p>
                     </div>
                     <div class="card-item">
-                        <strong>Nome</strong>
-                        <p>{{ user.full_name or '-' }}</p>
+                        <strong>Telefone</strong>
+                        <p>{{ user.phone or '-' }}</p>
                     </div>
                     <div class="card-item">
                         <strong>Avatar</strong>
@@ -45,8 +92,64 @@
                         </p>
                     </div>
                 </div>
+
+                <button class="button secondary" id="toggle-profile-edit" type="button" style="margin-top: 20px;">Alterar informações da conta</button>
+
+                <form id="profile-edit-form" method="post" action="/account/update-profile" class="form-card" style="margin-top: 20px; display: none;">
+                    <div class="form-row">
+                        <label for="full_name">Nome completo</label>
+                        <input id="full_name" name="full_name" type="text" value="{{ user.full_name or '' }}" required />
+                    </div>
+                    <div class="form-row">
+                        <label for="profession">Profissão</label>
+                        <select id="profession" name="profession">
+                            <option value="" {% if not user.profession %}selected{% endif %}>Selecione</option>
+                            <option value="Psicólogo(a)" {% if user.profession == 'Psicólogo(a)' %}selected{% endif %}>Psicólogo(a)</option>
+                            <option value="Neuropsicólogo(a)" {% if user.profession == 'Neuropsicólogo(a)' %}selected{% endif %}>Neuropsicólogo(a)</option>
+                            <option value="Terapeuta" {% if user.profession == 'Terapeuta' %}selected{% endif %}>Terapeuta</option>
+                            <option value="Outro" {% if user.profession == 'Outro' %}selected{% endif %}>Outro</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="gender">Gênero</label>
+                        <select id="gender" name="gender">
+                            <option value="" {% if not user.gender %}selected{% endif %}>Selecione</option>
+                            <option value="Masculino" {% if user.gender == 'Masculino' %}selected{% endif %}>Masculino</option>
+                            <option value="Feminino" {% if user.gender == 'Feminino' %}selected{% endif %}>Feminino</option>
+                            <option value="Outro" {% if user.gender == 'Outro' %}selected{% endif %}>Outro</option>
+                        </select>
+                    </div>
+                    <button class="button" type="submit">Salvar alterações</button>
+                </form>
             </section>
         </main>
     </div>
+    <script>
+        const userMenu = document.getElementById('user-menu');
+        const userMenuToggle = document.getElementById('user-menu-toggle');
+        const profileEditToggle = document.getElementById('toggle-profile-edit');
+        const profileEditForm = document.getElementById('profile-edit-form');
+
+        if (userMenu && userMenuToggle) {
+            userMenuToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                userMenu.classList.toggle('open');
+                userMenuToggle.setAttribute('aria-expanded', String(userMenu.classList.contains('open')));
+            });
+
+            document.addEventListener('click', () => {
+                userMenu.classList.remove('open');
+                userMenuToggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        if (profileEditToggle && profileEditForm) {
+            profileEditToggle.addEventListener('click', () => {
+                const isHidden = profileEditForm.style.display === 'none';
+                profileEditForm.style.display = isHidden ? 'grid' : 'none';
+                profileEditToggle.textContent = isHidden ? 'Cancelar' : 'Alterar informações da conta';
+            });
+        }
+    </script>
 </body>
 </html>

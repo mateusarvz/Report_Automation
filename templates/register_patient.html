@@ -9,23 +9,53 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <div class="brand">Report Psicologia</div>
-            <nav>
-                <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Gerar Relatório</a>
-                <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Cadastrar Paciente</a>
-                <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Dados da conta</a>
-                <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Dados dos Pacientes</a>
-            </nav>
+            <div>
+                <div class="brand-row">
+                    <img class="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="Logo CogniReports" />
+                    <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
+                </div>
+                <nav>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
+                    <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
+                    <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
+                    <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
+                </nav>
+            </div>
         </aside>
         <main class="content">
-            <header class="topbar">
-                <div>Cadastrar Paciente</div>
-                <a class="logout" href="/logout">Sair</a>
-            </header>
+            <div class="topbar">
+                <section class="page-header">
+                    <img class="page-icon-image" src="/static/assets/icons/novo-paciente.png" alt="Ícone de Novo Paciente" />
+                    <div>
+                        <h1>Cadastrar Paciente</h1>
+                    </div>
+                </section>
+                <div class="user-menu" id="user-menu">
+                    <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <div class="user-menu-text">
+                            <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
+                            {% set subtitle = '' %}
+                            {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Psicólogo' %}
+                            {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Psicóloga' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Neuropsicólogo' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% endif %}
+                            {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
+                        </div>
+                        <span class="user-menu-caret">▾</span>
+                    </button>
+                    <div class="user-menu-dropdown" id="user-menu-dropdown">
+                        <a href="/logout">Sair</a>
+                    </div>
+                </div>
+            </div>
 
-            <section class="section">
-                <h2>Novo Paciente</h2>
-                <form id="patient-form" class="form-card form-rounded">
+            <form id="patient-form" class="section form-card form-rounded">
                     <div class="form-row">
                         <label for="full_name">Nome completo</label>
                         <input id="full_name" name="full_name" type="text" required placeholder="Digite aqui o nome do paciente" />
@@ -38,11 +68,11 @@
                         <div class="field-col">
                             <label for="gender">Gênero</label>
                             <select id="gender" name="gender">
-                                <option value="">Selecione</option>
-                                <option value="F">Feminino</option>
-                                <option value="M">Masculino</option>
-                                <option value="O">Outro</option>
-                            </select>
+                                        <option value="">Selecione</option>
+                                        <option value="Feminino">Feminino</option>
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Outro">Outro</option>
+                                    </select>
                         </div>
                     </div>
                     <div class="form-row two-cols">
@@ -60,7 +90,36 @@
                         <p id="patient-form-message" class="form-message"></p>
                     </div>
                 </form>
-            </section>
+
+                <section class="section patient-table-section">
+                    <div class="form-card table-card">
+                        <h2 class="table-title">Pacientes cadastrados</h2>
+                        {% if patients and patients|length > 0 %}
+                        <div class="table-scroll">
+                            <table class="patients-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Idade</th>
+                                        <th>Número do responsável</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in patients %}
+                                    <tr>
+                                        <td>{{ p.full_name }}</td>
+                                        <td>{{ p.age }}</td>
+                                        <td>{{ p.phone }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p>Nenhum paciente cadastrado.</p>
+                        {% endif %}
+                    </div>
+                </section>
         </main>
     </div>
 
@@ -74,6 +133,24 @@
             const mm = m[2];
             const yyyy = m[3];
             return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // formatters
+        function formatDateField(e) {
+            let v = e.target.value.replace(/[^0-9]/g, '').slice(0,8);
+            if (v.length >= 5) v = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4,8)}`;
+            else if (v.length >= 3) v = `${v.slice(0,2)}/${v.slice(2,4)}`;
+            e.target.value = v;
+        }
+
+        function formatPhoneField(e) {
+            // digits only
+            let v = e.target.value.replace(/[^0-9]/g, '').slice(0,11);
+            // format: (AA) 99999 9999 or (AA) 9999 9999 depending on length
+            if (v.length <= 2) v = `(${v}`;
+            else if (v.length <= 6) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+            else v = `(${v.slice(0,2)}) ${v.slice(2,7)} ${v.slice(7)}`;
+            e.target.value = v.trim();
         }
 
         async function handlePatientForm(event) {
@@ -103,16 +180,22 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data),
                 });
-                if (!res.ok) {
-                    let errText = 'Erro';
+                const responseText = await res.text();
+                let responseBody = null;
+                if (responseText) {
                     try {
-                        const body = await res.json();
-                        errText = body.error || body.detail || JSON.stringify(body);
+                        responseBody = JSON.parse(responseText);
                     } catch (_) {
-                        errText = await res.text();
+                        responseBody = responseText;
                     }
-                    if (res.status === 409) {
-                        errText = errText || 'Paciente com mesmo nome já existe.';
+                }
+                if (!res.ok) {
+                    let errText = 'Erro ao salvar paciente.';
+                    if (responseBody) {
+                        errText = responseBody.error || responseBody.detail || responseBody.message || JSON.stringify(responseBody);
+                    }
+                    if (res.status === 400 && (responseBody && (responseBody.detail || '').includes('Já existe um paciente')) ) {
+                        errText = 'Já existe um paciente com esse nome registrado';
                     }
                     throw new Error(errText);
                 }
@@ -124,7 +207,28 @@
             }
         }
 
+        // attach formatters
+        const birthInput = document.getElementById('birth_date');
+        const phoneInput = document.getElementById('phone');
+        if (birthInput) birthInput.addEventListener('input', formatDateField);
+        if (phoneInput) phoneInput.addEventListener('input', formatPhoneField);
+
         document.getElementById('patient-form').addEventListener('submit', handlePatientForm);
+
+        const userMenu = document.getElementById('user-menu');
+        const userMenuToggle = document.getElementById('user-menu-toggle');
+        if (userMenu && userMenuToggle) {
+            userMenuToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                userMenu.classList.toggle('open');
+                userMenuToggle.setAttribute('aria-expanded', String(userMenu.classList.contains('open')));
+            });
+
+            document.addEventListener('click', () => {
+                userMenu.classList.remove('open');
+                userMenuToggle.setAttribute('aria-expanded', 'false');
+            });
+        }
     </script>
 </body>
 </html>

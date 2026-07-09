@@ -9,9 +9,21 @@
 <body>
     <div class="page-center">
         <div class="card">
-            <h1>Report Psicologia</h1>
-            <p>Faça login com sua conta Google para acessar o painel.</p>
-            <a class="button" href="{{ supabase_auth_url }}">Entrar com Google</a>
+            <img class="login-logo" src="/static/assets/logos/Logo_CogniReport_1.png" alt="Logo CogniReports" />
+            <form method="post" action="/login" class="form-card">
+                <div class="form-row">
+                    <label for="email">E-mail</label>
+                    <input id="email" name="email" type="email" placeholder="seu@email.com" required />
+                </div>
+                <div class="form-row">
+                    <label for="password">Senha</label>
+                    <input id="password" name="password" type="password" placeholder="Sua senha" required />
+                </div>
+                {% if error %}
+                <p class="form-message" style="color: #dc2626;">{{ error }}</p>
+                {% endif %}
+                <button class="button" type="submit">Entrar</button>
+            </form>
         </div>
     </div>
 </body>

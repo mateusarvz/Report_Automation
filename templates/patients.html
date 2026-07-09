@@ -9,29 +9,100 @@
 <body>
     <div class="app-shell">
         <aside class="sidebar">
-            <div class="brand">Report Psicologia</div>
-            <nav>
-                <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Gerar Relatório</a>
-                <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Cadastrar Paciente</a>
-                <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Dados da conta</a>
-                <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Dados dos Pacientes</a>
-            </nav>
+            <div>
+                <div class="brand-row">
+                    <img class="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="Logo CogniReports" />
+                    <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
+                </div>
+                <nav>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
+                    <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
+                    <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
+                    <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
+                </nav>
+            </div>
         </aside>
         <main class="content">
-            <header class="topbar">
-                <div>Pacientes</div>
-                <a class="logout" href="/logout">Sair</a>
-            </header>
+            <div class="topbar">
+                <section class="page-header">
+                    <img class="page-icon-image" src="/static/assets/icons/dados-pacientes.png" alt="Ícone de Dados dos Pacientes" />
+                    <div>
+                        <h1>Dados dos Pacientes</h1>
+                    </div>
+                </section>
+                <div class="user-menu" id="user-menu">
+                    <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <div class="user-menu-text">
+                            <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
+                            {% set subtitle = '' %}
+                            {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Psicólogo' %}
+                            {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Psicóloga' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Neuropsicólogo' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% endif %}
+                            {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
+                        </div>
+                        <span class="user-menu-caret">▾</span>
+                    </button>
+                    <div class="user-menu-dropdown" id="user-menu-dropdown">
+                        <a href="/logout">Sair</a>
+                    </div>
+                </div>
+            </div>
 
             <section class="section">
-                <h2>Pacientes relacionados</h2>
                 {% if patients and patients|length > 0 %}
                 <div class="card-grid">
                     {% for p in patients %}
-                    <div class="card-item">
-                        <strong>{{ p.full_name }}</strong>
-                        <p>{{ p.email or '' }}</p>
-                        <p class="help-text">Criado: {{ p.created_at }}</p>
+                    <div class="card-item patient-card" data-patient-id="{{ p.id }}">
+                        <div class="patient-info-row"><strong>Nome</strong><span>{{ p.full_name }}</span></div>
+                        <div class="patient-info-row"><strong>Idade</strong><span>{{ p.age }}</span></div>
+                        <div class="patient-info-row"><strong>Gênero</strong><span>{{ p.gender }}</span></div>
+                        <div class="patient-info-row"><strong>Data de nascimento</strong><span>{{ p.birth_date }}</span></div>
+                        <div class="patient-info-row"><strong>Email do responsável</strong><span>{{ p.email }}</span></div>
+                        <div class="patient-info-row"><strong>Número do responsável</strong><span>{{ p.phone }}</span></div>
+                        <button class="button secondary edit-patient-button" type="button">Alterar dados do paciente</button>
+                        <form class="patient-edit-form" data-patient-id="{{ p.id }}" hidden>
+                            <div class="form-row">
+                                <label>Nome</label>
+                                <input name="full_name" type="text" value="{{ p.full_name }}" required />
+                            </div>
+                            <div class="form-row two-cols">
+                                <div class="field-col">
+                                    <label>Gênero</label>
+                                    <select name="gender">
+                                        <option value="">Selecione</option>
+                                        <option value="Feminino" {% if p.gender == 'Feminino' %}selected{% endif %}>Feminino</option>
+                                        <option value="Masculino" {% if p.gender == 'Masculino' %}selected{% endif %}>Masculino</option>
+                                        <option value="Outro" {% if p.gender == 'Outro' %}selected{% endif %}>Outro</option>
+                                    </select>
+                                </div>
+                                <div class="field-col">
+                                    <label>Data de nascimento</label>
+                                    <input name="birth_date" type="text" value="{{ p.birth_date }}" placeholder="dd/mm/aaaa" />
+                                </div>
+                            </div>
+                            <div class="form-row two-cols">
+                                <div class="field-col">
+                                    <label>Email do responsável</label>
+                                    <input name="email" type="email" value="{{ p.email }}" />
+                                </div>
+                                <div class="field-col">
+                                    <label>Número do responsável</label>
+                                    <input name="phone" type="tel" value="{{ p.phone }}" />
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button class="button primary" type="submit">Salvar</button>
+                                <button class="button tertiary cancel-edit-button" type="button">Cancelar</button>
+                                <p class="form-message"></p>
+                            </div>
+                        </form>
                     </div>
                     {% endfor %}
                 </div>
@@ -41,5 +112,153 @@
             </section>
         </main>
     </div>
+    <script>
+        function parseDateDMY(value) {
+            if (!value) return null;
+            const m = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!m) return null;
+            const dd = m[1];
+            const mm = m[2];
+            const yyyy = m[3];
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function formatDateField(e) {
+            let v = e.target.value.replace(/[^0-9]/g, '').slice(0,8);
+            if (v.length >= 5) v = `${v.slice(0,2)}/${v.slice(2,4)}/${v.slice(4,8)}`;
+            else if (v.length >= 3) v = `${v.slice(0,2)}/${v.slice(2,4)}`;
+            e.target.value = v;
+        }
+
+        function formatPhoneField(e) {
+            let v = e.target.value.replace(/[^0-9]/g, '').slice(0,11);
+            if (v.length <= 2) v = `(${v}`;
+            else if (v.length <= 6) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+            else v = `(${v.slice(0,2)}) ${v.slice(2,7)} ${v.slice(7)}`;
+            e.target.value = v.trim();
+        }
+
+        function calculateAgeFromDMY(value) {
+            const m = value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!m) return '';
+            const day = Number(m[1]);
+            const month = Number(m[2]) - 1;
+            const year = Number(m[3]);
+            const birth = new Date(year, month, day);
+            if (Number.isNaN(birth.getTime())) return '';
+            const today = new Date();
+            let age = today.getFullYear() - birth.getFullYear();
+            if (today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) {
+                age -= 1;
+            }
+            return String(age);
+        }
+
+        function getEditForm(button) {
+            const card = button.closest('.patient-card');
+            return card ? card.querySelector('.patient-edit-form') : null;
+        }
+
+        function showEditForm(button) {
+            const form = getEditForm(button);
+            if (!form) return;
+            form.hidden = false;
+            button.hidden = true;
+        }
+
+        function hideEditForm(button) {
+            const card = button.closest('.patient-card');
+            if (!card) return;
+            const form = card.querySelector('.patient-edit-form');
+            const editButton = card.querySelector('.edit-patient-button');
+            if (form) form.hidden = true;
+            if (editButton) editButton.hidden = false;
+            const message = card.querySelector('.form-message');
+            if (message) message.textContent = '';
+        }
+
+        async function submitEditForm(event) {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const patientId = form.dataset.patientId;
+            const card = form.closest('.patient-card');
+            const message = card.querySelector('.form-message');
+            if (message) message.textContent = '';
+
+            const rawBirth = form.birth_date.value || '';
+            let birthIso = parseDateDMY(rawBirth) || null;
+            if (!birthIso && rawBirth.match(/^\d{4}-\d{2}-\d{2}$/)) birthIso = rawBirth;
+
+            const payload = {
+                full_name: form.full_name.value.trim(),
+                birth_date: birthIso,
+                gender: form.gender.value || null,
+                phone: form.phone.value.trim() || null,
+                email: form.email.value.trim() || null,
+            };
+            if (!payload.full_name) {
+                if (message) message.textContent = 'Nome completo é obrigatório.';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/patients/${patientId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || data.error || data.message || 'Erro ao atualizar paciente.');
+                }
+                if (message) message.textContent = 'Paciente atualizado.';
+                const infoRows = card.querySelectorAll('.patient-info-row span');
+                if (infoRows.length >= 6) {
+                    infoRows[0].textContent = payload.full_name;
+                    infoRows[1].textContent = calculateAgeFromDMY(form.birth_date.value || '') || '';
+                    infoRows[2].textContent = payload.gender || '';
+                    infoRows[3].textContent = form.birth_date.value || '';
+                    infoRows[4].textContent = payload.email || '';
+                    infoRows[5].textContent = payload.phone || '';
+                }
+                setTimeout(() => hideEditForm(card.querySelector('.cancel-edit-button')),
+                    700);
+            } catch (error) {
+                if (message) message.textContent = error.message || 'Erro desconhecido.';
+                console.error(error);
+            }
+        }
+
+        document.querySelectorAll('.edit-patient-button').forEach(button => {
+            button.addEventListener('click', () => showEditForm(button));
+        });
+
+        document.querySelectorAll('.cancel-edit-button').forEach(button => {
+            button.addEventListener('click', () => hideEditForm(button));
+        });
+
+        document.querySelectorAll('.patient-edit-form').forEach(form => {
+            const birthInput = form.querySelector('input[name="birth_date"]');
+            const phoneInput = form.querySelector('input[name="phone"]');
+            if (birthInput) birthInput.addEventListener('input', formatDateField);
+            if (phoneInput) phoneInput.addEventListener('input', formatPhoneField);
+            form.addEventListener('submit', submitEditForm);
+        });
+
+        const userMenu = document.getElementById('user-menu');
+        const userMenuToggle = document.getElementById('user-menu-toggle');
+        if (userMenu && userMenuToggle) {
+            userMenuToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                userMenu.classList.toggle('open');
+                userMenuToggle.setAttribute('aria-expanded', String(userMenu.classList.contains('open')));
+            });
+
+            document.addEventListener('click', () => {
+                userMenu.classList.remove('open');
+                userMenuToggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+    </script>
 </body>
 </html>
