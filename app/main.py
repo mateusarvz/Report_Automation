@@ -8,7 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 
 from app.auth import login_user, logout_user, get_user_from_session, templates, get_authenticated_client, build_display_name
-from app.report_store import ensure_report_folders, REPORT_DEFINITIONS, save_dataframe, get_report_input_fields, get_report_folders
+from app.report_store import ensure_report_folders, save_dataframe, get_report_input_fields, get_report_folders
 from app.report_data import build_tac2_dataframes
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env.local'))
@@ -196,9 +196,18 @@ async def create_report(request: Request):
     patient = raw_data[0]
 
     if report_name == "TAC 2":
-        report_dfs = build_tac2_dataframes(patient["id"], patient.get("full_name") or "Paciente")
+        report_dfs = build_tac2_dataframes(client, patient["id"], patient.get("full_name") or "Paciente", input_data)
         for dataframe_name, dataframe in report_dfs.items():
             save_dataframe(report_name, dataframe_name, dataframe)
+        # return computed results to client if available
+        results_df = report_dfs.get('results')
+        report_results = None
+        if results_df is not None and not results_df.empty:
+            try:
+                report_results = results_df.fillna('').to_dict(orient='records')[0]
+            except Exception:
+                report_results = None
+        return {"ok": True, "report_name": report_name, "patient_id": patient_id, "report_results": report_results}
     else:
         report_module = None
         try:

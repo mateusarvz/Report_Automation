@@ -158,6 +158,8 @@
                     input.name = field.name;
                     input.placeholder = field.placeholder || '';
                     if (field.required) input.required = true;
+                    if (field.min !== undefined) input.min = field.min;
+                    if (field.max !== undefined) input.max = field.max;
                     fieldWrapper.appendChild(input);
 
                     fieldsContainer.appendChild(fieldWrapper);
@@ -183,18 +185,27 @@
         document.getElementById('generate-btn').addEventListener('click', async () => {
             const patientId = document.getElementById('report-patient').value;
             const reportName = document.getElementById('report-type').value;
-            const inputValue = document.getElementById('tac2_input') ? document.getElementById('tac2_input').value : null;
+            // collect inputs from dynamically rendered report fields
+            const inputs = {};
+            document.querySelectorAll('#report-fields input').forEach(inp => {
+                if (inp.name) inputs[inp.name] = inp.type === 'number' ? (inp.value === '' ? null : Number(inp.value)) : inp.value;
+            });
             try {
                 const res = await fetch('/api/reports', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ patient_id: patientId, report_name: reportName, input_data: { tac2_input: inputValue } }),
+                    body: JSON.stringify({ patient_id: patientId, report_name: reportName, input_data: inputs }),
                 });
                 const data = await res.json();
                 if (!res.ok) {
                     throw new Error(data.detail || 'Erro ao gerar relatório');
                 }
-                loadReportInterface(reportName);
+                // if server returned computed results, display them
+                if (data.report_results) {
+                    loadReportResults(reportName, data.report_results);
+                } else {
+                    loadReportInterface(reportName);
+                }
             } catch (error) {
                 alert(error.message || 'Erro ao gerar relatório');
                 console.error(error);
@@ -224,6 +235,33 @@
             }
         }
 
+        function loadReportResults(reportName, results) {
+            const section = document.createElement('section');
+            section.className = 'section';
+            section.id = 'tac2-interface-section';
+            section.innerHTML = `
+                <div class="form-card">
+                    <h2>${reportName} - Resultados</h2>
+                    <div class="form-row"><label>Idade</label><div>${results.idade_paciente_tac2 || 'N/A'}</div></div>
+                    <div class="form-row"><label>Primeira parte (input)</label><div>${results.pontuacao_primeira_parte_input}</div></div>
+                    <div class="form-row"><label>Primeira parte (mapeada)</label><div>${results.pontuacao_primeira_parte_mapeada}</div></div>
+                    <div class="form-row"><label>Score Total</label><div>${results.score_total_input ?? 'N/A'}</div></div>
+                    <div class="form-row"><label>Score Total (mapeado)</label><div>${results.score_total_mapeado ?? 'N/A'}</div></div>
+                    <div class="form-row"><label>Segunda parte (input)</label><div>${results.pontuacao_segunda_parte_input}</div></div>
+                    <div class="form-row"><label>Segunda parte (mapeada)</label><div>${results.pontuacao_segunda_parte_mapeada}</div></div>
+                    <div class="form-row"><label>Terceira parte (input)</label><div>${results.pontuacao_terceira_parte_input}</div></div>
+                    <div class="form-row"><label>Terceira parte (mapeada)</label><div>${results.pontuacao_terceira_parte_mapeada}</div></div>
+                </div>
+            `;
+
+            const existing = document.getElementById('tac2-interface-section');
+            if (existing) {
+                existing.replaceWith(section);
+            } else {
+                document.querySelector('main.content').appendChild(section);
+            }
+        }
+
         const userMenu = document.getElementById('user-menu');
         const userMenuToggle = document.getElementById('user-menu-toggle');
         if (userMenu && userMenuToggle) {
@@ -240,6 +278,7 @@
         }
 
         loadPatients();
+        loadReportTypes();
     </script>
 </body>
 </html>

@@ -1,40 +1,53 @@
-import pandas as pd
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent
-CSV_FILES = {
-    'patient_summary': BASE_DIR / 'patient_summary.csv',
-    'assessment_items': BASE_DIR / 'assessment_items.csv',
-}
-
-
-def load_tables():
-    tables = {}
-    for name, path in CSV_FILES.items():
-        if path.exists():
-            tables[name] = pd.read_csv(path)
-        else:
-            tables[name] = pd.DataFrame()
-    return tables
-
-
 def get_input_schema():
+    # three integer inputs with ranges
     return [
         {
-            'name': 'tac2_input',
-            'label': 'Entrada TAC 2',
-            'type': 'text',
-            'required': False,
-            'placeholder': 'Digite um valor para TAC 2',
-        }
+            "name": "pontuacao_primeira_parte",
+            "label": "Pontuação Primeira parte",
+            "type": "number",
+            "placeholder": "0 - 50",
+            "required": True,
+            "min": 0,
+            "max": 50,
+        },
+        {
+            "name": "pontuacao_segunda_parte",
+            "label": "Pontuação Segunda parte",
+            "type": "number",
+            "placeholder": "0 - 7",
+            "required": True,
+            "min": 0,
+            "max": 7,
+        },
+        {
+            "name": "pontuacao_terceira_parte",
+            "label": "Pontuação Terceira parte",
+            "type": "number",
+            "placeholder": "0 - 52",
+            "required": True,
+            "min": 0,
+            "max": 52,
+        },
     ]
 
 
-def build_report(patient_id: str, patient_name: str, input_data: dict | None = None):
-    tables = load_tables()
-    return {
-        'patient_id': patient_id,
-        'patient_name': patient_name,
-        'input_data': input_data or {},
-        'tables': tables,
-    }
+def build_report(patient_id, patient_name, input_data):
+    # optional entrypoint when module loaded directly.
+    # use dynamic import to avoid package issues
+    import importlib.util
+    from pathlib import Path
+
+    report_dir = Path(__file__).resolve().parents[0]
+    module_file = report_dir / 'TAC2_report.py'
+    spec = importlib.util.spec_from_file_location(
+        'tac2_module', str(module_file)
+    )
+    module = importlib.util.module_from_spec(spec)
+    if spec and spec.loader:
+        spec.loader.exec_module(module)
+        if hasattr(module, 'build_tac2_report'):
+            return module.build_tac2_report(
+                None, patient_id, patient_name, input_data,
+                report_dir=report_dir
+            )
+    raise RuntimeError('TAC2 build_report not available')
