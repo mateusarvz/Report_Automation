@@ -42,13 +42,10 @@ SUPABASE_KEY = (
     or os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
 )
 
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError("Supabase URL and key must be configured")
-
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "supabase": "connected"}
+    return {"status": "ok", "supabase": "configured" if SUPABASE_URL and SUPABASE_KEY else "missing"}
 
 
 @app.get("/")

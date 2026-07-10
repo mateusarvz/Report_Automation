@@ -14,10 +14,10 @@ SUPABASE_KEY = (
     or os.getenv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
 )
 
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError('Supabase URL and key must be configured')
+supabase: Optional[Client] = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 templates = Jinja2Templates(directory='templates')
 
 
@@ -85,6 +85,9 @@ def _get_metadata_value(user_metadata, *keys):
 
 
 def get_authenticated_client(request: Request) -> Client:
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        raise HTTPException(status_code=503, detail='Supabase não configurado')
+
     client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     if hasattr(request, 'session'):
@@ -100,6 +103,9 @@ def get_authenticated_client(request: Request) -> Client:
 
 
 async def login_user(email: str, password: str, request: Request):
+    if not supabase:
+        raise HTTPException(status_code=503, detail='Supabase não configurado')
+
     response = supabase.auth.sign_in_with_password({
         'email': email,
         'password': password,
