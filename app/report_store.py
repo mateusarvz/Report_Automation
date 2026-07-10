@@ -1,5 +1,4 @@
 import importlib.util
-import os
 from pathlib import Path
 
 import pandas as pd
@@ -10,7 +9,6 @@ DATAFRAMES_ROOT = Path(__file__).resolve().parents[1] / 'dataframes'
 
 def ensure_report_folders():
     REPORT_ROOT.mkdir(parents=True, exist_ok=True)
-    DATAFRAMES_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 def get_report_folders():

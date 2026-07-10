@@ -1,13 +1,31 @@
 """TAC2 report helpers: load tables, compute mapped scores, build results.
 
-This module loads CSVs in report_dir and returns DataFrames containing only
-numeric values.
+This module loads CSVs only from the TAC2 report directory and keeps the
+computed result in memory. It does not generate CSV files for the report
+output.
 """
 
 from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import date, datetime
+
+
+def classify_score_metric(value) -> str:
+    try:
+        numeric_value = float(value)
+    except (TypeError, ValueError):
+        return ""
+
+    if numeric_value < 70:
+        return "Muito Baixa"
+    if numeric_value < 85:
+        return "Baixa"
+    if numeric_value < 115:
+        return "Média"
+    if numeric_value < 130:
+        return "Alta"
+    return "Muito Alta"
 
 
 def _read_csv_numeric(path: Path) -> pd.DataFrame:
@@ -156,19 +174,25 @@ def build_tac2_report(
             "idade_paciente_tac2": idade if idade is not None else np.nan,
             "pontuacao_primeira_parte_input": p1 if p1 is not None else np.nan,
             "pontuacao_primeira_parte_mapeada": mapped1,
+            "pontuacao_primeira_parte_categoria": classify_score_metric(mapped1),
             "score_total_input": (
                 score_total_input if score_total_input is not None else np.nan
             ),
             "score_total_mapeado": mapped_total,
+            "score_total_categoria": classify_score_metric(mapped_total),
             "pontuacao_segunda_parte_input": p2 if p2 is not None else np.nan,
             "pontuacao_segunda_parte_mapeada": mapped2,
+            "pontuacao_segunda_parte_categoria": classify_score_metric(mapped2),
             "pontuacao_terceira_parte_input": p3 if p3 is not None else np.nan,
             "pontuacao_terceira_parte_mapeada": mapped3,
+            "pontuacao_terceira_parte_categoria": classify_score_metric(mapped3),
         }
     ])
 
     for col in results.columns:
         if col in ("patient_name", "patient_id"):
+            continue
+        if col.endswith("_categoria"):
             continue
         results[col] = pd.to_numeric(results[col], errors="coerce")
 

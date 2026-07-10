@@ -196,18 +196,25 @@ async def create_report(request: Request):
     patient = raw_data[0]
 
     if report_name == "TAC 2":
-        report_dfs = build_tac2_dataframes(client, patient["id"], patient.get("full_name") or "Paciente", input_data)
-        for dataframe_name, dataframe in report_dfs.items():
-            save_dataframe(report_name, dataframe_name, dataframe)
-        # return computed results to client if available
-        results_df = report_dfs.get('results')
+        report_dfs = build_tac2_dataframes(
+            client,
+            patient["id"],
+            patient.get("full_name") or "Paciente",
+            input_data,
+        )
+        results_df = report_dfs.get("results")
         report_results = None
         if results_df is not None and not results_df.empty:
             try:
-                report_results = results_df.fillna('').to_dict(orient='records')[0]
+                report_results = results_df.fillna("").to_dict(orient="records")[0]
             except Exception:
                 report_results = None
-        return {"ok": True, "report_name": report_name, "patient_id": patient_id, "report_results": report_results}
+        return {
+            "ok": True,
+            "report_name": report_name,
+            "patient_id": patient_id,
+            "report_results": report_results,
+        }
     else:
         report_module = None
         try:

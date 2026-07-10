@@ -56,7 +56,7 @@
             </div>
 
             <section class="section" style="padding-top: 16px;">
-                <div class="form-card">
+                <div class="form-card" id="report-selection-card">
                     <label for="report-patient">Paciente</label>
                     <select id="report-patient">
                         <option>Carregando pacientes...</option>
@@ -65,12 +65,13 @@
                     <select id="report-type">
                         <option>Carregando tipos...</option>
                     </select>
-                    <div id="report-fields"></div>
                     <div>
                         <button class="button" id="generate-btn" disabled>Carregar Relatório</button>
                     </div>
                 </div>
             </section>
+            <div id="report-input-container"></div>
+            <div id="report-results-container"></div>
         </main>
     </div>
     <script>
@@ -128,8 +129,15 @@
             }
         }
 
+        function clearReportContainers() {
+            const inputContainer = document.getElementById('report-input-container');
+            const resultsContainer = document.getElementById('report-results-container');
+            if (inputContainer) inputContainer.innerHTML = '';
+            if (resultsContainer) resultsContainer.innerHTML = '';
+        }
+
         async function loadReportFields(reportName) {
-            const fieldsContainer = document.getElementById('report-fields');
+            const fieldsContainer = document.getElementById('report-input-container');
             fieldsContainer.innerHTML = '';
             if (!reportName) {
                 return;
@@ -142,6 +150,17 @@
                 if (!Array.isArray(fields) || fields.length === 0) {
                     return;
                 }
+
+                const panel = document.createElement('section');
+                panel.className = 'section';
+                panel.style.marginTop = '16px';
+
+                const card = document.createElement('div');
+                card.className = 'form-card';
+
+                const heading = document.createElement('h2');
+                heading.textContent = reportName;
+                card.appendChild(heading);
 
                 fields.forEach(field => {
                     const fieldWrapper = document.createElement('div');
@@ -162,8 +181,21 @@
                     if (field.max !== undefined) input.max = field.max;
                     fieldWrapper.appendChild(input);
 
-                    fieldsContainer.appendChild(fieldWrapper);
+                    card.appendChild(fieldWrapper);
                 });
+
+                const actionButton = document.createElement('button');
+                actionButton.className = 'button';
+                actionButton.type = 'button';
+                actionButton.id = 'submit-report-btn';
+                actionButton.textContent = 'Gerar relatório';
+                actionButton.addEventListener('click', async () => {
+                    await submitReport();
+                });
+                card.appendChild(actionButton);
+
+                panel.appendChild(card);
+                fieldsContainer.appendChild(panel);
             } catch (e) {
                 console.error(e);
             }
@@ -177,17 +209,21 @@
         }
 
         document.getElementById('report-patient').addEventListener('change', updateGenerateButtonState);
-        document.getElementById('report-type').addEventListener('change', async (event) => {
+        document.getElementById('report-type').addEventListener('change', () => {
             updateGenerateButtonState();
-            await loadReportFields(event.target.value);
+            clearReportContainers();
         });
 
         document.getElementById('generate-btn').addEventListener('click', async () => {
+            const reportName = document.getElementById('report-type').value;
+            await loadReportFields(reportName);
+        });
+
+        async function submitReport() {
             const patientId = document.getElementById('report-patient').value;
             const reportName = document.getElementById('report-type').value;
-            // collect inputs from dynamically rendered report fields
             const inputs = {};
-            document.querySelectorAll('#report-fields input').forEach(inp => {
+            document.querySelectorAll('#report-input-container input').forEach(inp => {
                 if (inp.name) inputs[inp.name] = inp.type === 'number' ? (inp.value === '' ? null : Number(inp.value)) : inp.value;
             });
             try {
@@ -200,7 +236,6 @@
                 if (!res.ok) {
                     throw new Error(data.detail || 'Erro ao gerar relatório');
                 }
-                // if server returned computed results, display them
                 if (data.report_results) {
                     loadReportResults(reportName, data.report_results);
                 } else {
@@ -210,56 +245,55 @@
                 alert(error.message || 'Erro ao gerar relatório');
                 console.error(error);
             }
-        });
+        }
 
-        function loadReportInterface(reportName) {
-            const section = document.createElement('section');
-            section.className = 'section';
-            section.id = 'tac2-interface-section';
-            section.innerHTML = `
-                <div class="form-card">
-                    <h2>${reportName}</h2>
-                    <div class="form-row">
-                        <label>Entrada TAC 2</label>
-                        <input id="tac2_input" type="text" placeholder="Digite um valor para TAC 2" />
-                    </div>
-                    <p>Para TAC 2, por enquanto nenhuma ação será feita com este valor.</p>
-                </div>
-            `;
-
-            const existing = document.getElementById('tac2-interface-section');
-            if (existing) {
-                existing.replaceWith(section);
-            } else {
-                document.querySelector('main.content').appendChild(section);
+        function getMetricBadgeClass(category) {
+            switch (category) {
+                case 'Muito Baixa':
+                    return 'metric-badge-muito-baixa';
+                case 'Baixa':
+                    return 'metric-badge-baixa';
+                case 'Média':
+                    return 'metric-badge-media';
+                case 'Alta':
+                    return 'metric-badge-alta';
+                case 'Muito Alta':
+                    return 'metric-badge-muito-alta';
+                default:
+                    return 'metric-badge-media';
             }
         }
 
-        function loadReportResults(reportName, results) {
-            const section = document.createElement('section');
-            section.className = 'section';
-            section.id = 'tac2-interface-section';
-            section.innerHTML = `
-                <div class="form-card">
-                    <h2>${reportName} - Resultados</h2>
-                    <div class="form-row"><label>Idade</label><div>${results.idade_paciente_tac2 || 'N/A'}</div></div>
-                    <div class="form-row"><label>Primeira parte (input)</label><div>${results.pontuacao_primeira_parte_input}</div></div>
-                    <div class="form-row"><label>Primeira parte (mapeada)</label><div>${results.pontuacao_primeira_parte_mapeada}</div></div>
-                    <div class="form-row"><label>Score Total</label><div>${results.score_total_input ?? 'N/A'}</div></div>
-                    <div class="form-row"><label>Score Total (mapeado)</label><div>${results.score_total_mapeado ?? 'N/A'}</div></div>
-                    <div class="form-row"><label>Segunda parte (input)</label><div>${results.pontuacao_segunda_parte_input}</div></div>
-                    <div class="form-row"><label>Segunda parte (mapeada)</label><div>${results.pontuacao_segunda_parte_mapeada}</div></div>
-                    <div class="form-row"><label>Terceira parte (input)</label><div>${results.pontuacao_terceira_parte_input}</div></div>
-                    <div class="form-row"><label>Terceira parte (mapeada)</label><div>${results.pontuacao_terceira_parte_mapeada}</div></div>
-                </div>
+        function loadReportInterface(reportName) {
+            const container = document.getElementById('report-results-container');
+            container.innerHTML = `
+                <section class="section" style="margin-top: 16px;">
+                    <div class="form-card">
+                        <h2>${reportName}</h2>
+                        <div class="form-row">
+                            <label>Entrada TAC 2</label>
+                            <input id="tac2_input" type="text" placeholder="Digite um valor para TAC 2" />
+                        </div>
+                        <p>Para TAC 2, por enquanto nenhuma ação será feita com este valor.</p>
+                    </div>
+                </section>
             `;
+        }
 
-            const existing = document.getElementById('tac2-interface-section');
-            if (existing) {
-                existing.replaceWith(section);
-            } else {
-                document.querySelector('main.content').appendChild(section);
-            }
+        function loadReportResults(reportName, results) {
+            const container = document.getElementById('report-results-container');
+            container.innerHTML = `
+                <section class="section" style="margin-top: 16px;">
+                    <div class="form-card">
+                        <h2>${reportName} - Resultados</h2>
+                        <div class="form-row"><label>Idade</label><div>${results.idade_paciente_tac2 || 'N/A'}</div></div>
+                        <div class="form-row"><label>Pontuação Primeira parte:</label><div class="metric-value-row">${results.pontuacao_primeira_parte_mapeada ?? 'N/A'} <span class="metric-badge ${getMetricBadgeClass(results.pontuacao_primeira_parte_categoria)}">${results.pontuacao_primeira_parte_categoria || ''}</span></div></div>
+                        <div class="form-row"><label>Pontuação Segunda parte:</label><div class="metric-value-row">${results.pontuacao_segunda_parte_mapeada ?? 'N/A'} <span class="metric-badge ${getMetricBadgeClass(results.pontuacao_segunda_parte_categoria)}">${results.pontuacao_segunda_parte_categoria || ''}</span></div></div>
+                        <div class="form-row"><label>Pontuação Terceira parte:</label><div class="metric-value-row">${results.pontuacao_terceira_parte_mapeada ?? 'N/A'} <span class="metric-badge ${getMetricBadgeClass(results.pontuacao_terceira_parte_categoria)}">${results.pontuacao_terceira_parte_categoria || ''}</span></div></div>
+                        <div class="form-row"><label>Pontuação Geral</label><div class="metric-value-row">${results.score_total_mapeado ?? 'N/A'} <span class="metric-badge ${getMetricBadgeClass(results.score_total_categoria)}">${results.score_total_categoria || ''}</span></div></div>
+                    </div>
+                </section>
+            `;
         }
 
         const userMenu = document.getElementById('user-menu');
