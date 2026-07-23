@@ -1,0 +1,221 @@
+CONTEXTO PARA ANÁLISE DO TESTE DE ATENÇÃO POR CANCELAMENTO (TAC 2)
+====================================================================
+
+O TAC 2 é um teste neuropsicológico de atenção por cancelamento. Ele
+avalia principalmente dois componentes da atenção:
+
+- Atenção seletiva: a capacidade do indivíduo de identificar e marcar
+  estímulos-alvo específicos em meio a distratores (outros estímulos
+  semelhantes que não devem ser marcados).
+- Atenção alternada: a capacidade do indivíduo de alternar o foco
+  atencional entre diferentes critérios de busca ao longo da tarefa,
+  sem perder eficiência ou cometer erros.
+
+O teste é aplicado em formato de papel/caderno, com folhas contendo
+fileiras de estímulos (símbolos, letras ou figuras). O paciente deve
+cancelar (marcar) os alvos corretos dentro de um tempo determinado
+para cada parte.
+
+ESTRUTURA DO TESTE: AS 3 PARTES
+--------------------------------------------------------------------
+
+- Parte 1: tarefa de atenção seletiva mais simples, com um único tipo
+  de estímulo-alvo. Serve como medida de base da capacidade atencional
+  e velocidade de processamento.
+- Parte 2: aumenta a exigência de discriminação entre alvo e
+  distratores, exigindo maior controle inibitório e seletividade.
+- Parte 3: envolve alternância de critérios (o paciente precisa mudar
+  o que considera "alvo" em diferentes momentos da tarefa), avaliando
+  atenção alternada e flexibilidade cognitiva, além da seletiva.
+
+Em termos gerais, a dificuldade e a exigência cognitiva tendem a
+aumentar da Parte 1 para a Parte 3, pois cada parte acrescenta uma
+demanda adicional às habilidades já exigidas na parte anterior.
+
+RESULTADO GERAL
+--------------------------------------------------------------------
+TAC 2 calcula uma classificação para cada parte e uma classificação geral podendo ser (Muito
+Baixo, Baixo, Médio, Alto ou Muito Alto)
+
+A classificação geral não é uma média das
+classificações das partes individuais — ela é derivada da soma dos
+escores brutos, comparada a tabelas normativas próprias para o escore
+total. 
+
+As classificações (Muito Baixo, Baixo, Médio, Alto, Muito
+Alto) referentes a cada parte e ao total JÁ VÊM CALCULADAS no arquivo
+de resultado do paciente, com base nas tabelas normativas oficiais
+por idade.
+
+SIGNIFICADO DE CADA CATEGORIA DE CLASSIFICAÇÃO
+--------------------------------------------------------------------
+As categorias seguem uma lógica de distribuição normal (desempenho
+comparado ao esperado para a idade):
+
+- MUITO BAIXO: desempenho muito abaixo do esperado para a idade.
+  Sugere dificuldades atencionais significativas na habilidade
+  avaliada por aquela parte (ou no funcionamento atencional geral, no
+  caso do escore total). Pode indicar necessidade de investigação
+  complementar, especialmente se o padrão se repetir em outras
+  medidas ou partes do teste.
+
+- BAIXO: desempenho abaixo do esperado para a idade, mas não em nível
+  extremo. Indica fragilidade relativa na habilidade avaliada, que
+  merece atenção, mas que isoladamente não caracteriza,
+  necessariamente, um quadro clínico.
+
+- MÉDIO: desempenho dentro da faixa esperada/típica para a idade.
+  Reflete funcionamento atencional adequado na habilidade avaliada
+  por aquela parte (ou no geral, no caso do total).
+
+- ALTO: desempenho acima do esperado para a idade. Indica um bom
+  desempenho relativo na habilidade avaliada, geralmente sem
+  significado clínico, exceto quando contrastado com outras medidas
+  do próprio paciente.
+
+- MUITO ALTO: desempenho muito acima do esperado para a idade,
+  indicando excelente capacidade atencional na habilidade avaliada.
+
+Observação: essas categorias devem sempre ser interpretadas em
+relação à idade do paciente — a mesma pontuação bruta pode gerar
+classificações diferentes dependendo da faixa etária, pois as
+expectativas de desempenho mudam com o desenvolvimento cognitivo.
+
+PERSONALIZAÇÃO DO RELATÓRIO CONFORME A FAIXA ETÁRIA
+--------------------------------------------------------------------
+O TAC 2 é normatizado para duas grandes faixas de público: crianças e
+adolescentes de 5 a 14 anos, e jovens adultos (a partir de
+aproximadamente 20 anos, segundo o material de normatização
+consultado). Na prática, ao gerar o relatório, considere o paciente
+como pertencente a um destes dois grandes grupos: "criança/adolescente
+(5 a 14 anos)" ou "jovem adulto (a partir de 14/15 anos, conforme o
+critério adotado pelo avaliador)". Ajuste o tom, as expectativas de
+desenvolvimento e as recomendações de acordo com o grupo.
+ 
+Observação sobre a transição etária: as fontes de normatização
+consultadas indicam que a amostra do TAC cobre crianças de 5 a 14 anos
+e, separadamente, jovens adultos de cerca de 20 a 32 anos. Ou seja,
+pode não existir uma tabela normativa específica cobrindo com precisão
+a faixa de 15 a 19 anos. Quando o paciente estiver nessa transição,
+o relatório deve mencionar essa particularidade com cautela (ex.:
+"para essa faixa etária, a classificação foi obtida a partir da tabela
+normativa mais próxima disponível") em vez de tratar o resultado como
+totalmente equivalente ao de uma criança ou ao de um adulto jovem
+típico.
+ 
+1 CRIANÇAS E ADOLESCENTES (5 A 14 ANOS)
+   Dentro dessa faixa, a maturação da atenção não é linear nem
+   uniforme — ela evolui de forma mais acelerada nos primeiros anos
+   escolares e tende a se estabilizar perto do fim da faixa. Use estas
+   referências para contextualizar (não para reclassificar) o
+   resultado:
+ 
+   - 5 a 7 anos (educação infantil / alfabetização inicial):
+     Fase de desenvolvimento atencional ainda inicial. É esperado que
+     o desempenho absoluto (nº de acertos) seja mais baixo que o de
+     crianças mais velhas — isso já está considerado na tabela
+     normativa por idade. No relatório, contextualize dificuldades
+     nessa faixa com cautela redobrada, pois oscilações de atenção
+     são comuns e nem sempre indicam alteração clínica; considere
+     mencionar fatores como adaptação escolar, fadiga da aplicação e
+     familiaridade com tarefas de lápis e papel.
+ 
+   - 8 a 11 anos (ensino fundamental, anos iniciais/intermediários):
+     Fase de crescimento mais evidente da capacidade atencional e de
+     consolidação de rotinas escolares. Classificações Baixo/Muito
+     Baixo nessa faixa merecem atenção redobrada no relatório, pois
+     coincidem com o período em que dificuldades atencionais (ex.:
+     indicadores de TDAH) costumam se tornar mais visíveis no
+     contexto escolar. Relacione o desempenho na Parte 3 (alternância)
+     com relatos de dificuldade em seguir múltiplas instruções ou
+     trocar de atividade.
+ 
+   - 12 a 14 anos (final do ensino fundamental / início da
+     adolescência):
+     A literatura indica que a atenção tende a se tornar mais precisa
+     e estável nessa faixa, à medida que regiões frontais amadurecem.
+     Por isso, um desempenho "Médio" aqui já representa um sistema
+     atencional relativamente mais consolidado que o de uma criança de
+     8 anos com a mesma classificação. No relatório, é apropriado
+     comentar que, nessa idade, o teste também reflete de forma mais
+     direta a capacidade de autorregulação e controle inibitório, e
+     não apenas maturação básica da atenção.
+ 
+   De forma geral, para toda a faixa de 5 a 14 anos, ao redigir o
+   relatório:
+   - Relacione o desempenho a exigências do cotidiano escolar
+     (copiar da lousa, seguir instruções em sala, terminar tarefas no
+     tempo, alternar entre atividades).
+   - Evite comparar a criança com padrões de adultos; use sempre a
+     própria classificação já ajustada por idade como referência.
+   - Em classificações Baixo ou Muito Baixo, sugira, quando pertinente,
+     investigação complementar (ex.: outros testes de atenção,
+     relato de pais/professores, avaliação multiprofissional), sem
+     fechar diagnóstico apenas com base no TAC 2.
+ 
+2 JOVENS ADULTOS (A PARTIR DE ~14/15 ANOS, CONFORME CRITÉRIO ADOTADO)
+   Para pacientes classificados como jovens adultos:
+   - Pressupõe-se um sistema atencional já mais maduro, com maior
+     capacidade de controle inibitório e de alternância de foco em
+     comparação às crianças. As expectativas de desempenho nas tabelas
+     normativas para essa faixa já refletem isso.
+   - No relatório, é apropriado relacionar o desempenho a demandas
+     típicas dessa fase: estudos mais exigentes/vestibular, ambiente de
+     trabalho, tarefas que exigem concentração prolongada e
+     multitarefa.
+   - Classificações Baixo ou Muito Baixo nessa faixa tendem a ter peso
+     clínico maior do que oscilações observadas em crianças pequenas,
+     pois não podem mais ser atribuídas a imaturidade
+     neurodesenvolvimental esperada — é mais apropriado investigar
+     hipóteses como TDAH em adultos, dificuldades de concentração
+     associadas a ansiedade/estresse, privação de sono, entre outras,
+     sempre como hipóteses a serem confirmadas com outros
+     instrumentos e entrevista clínica, nunca de forma conclusiva
+     apenas com o TAC 2.
+   - Classificações Alto ou Muito Alto podem ser relacionadas a bom
+     desempenho em tarefas que exigem foco sustentado e mudança rápida
+     de critério, sem necessariamente implicar significado clínico.
+
+COMO INTERPRETAR O CONJUNTO DOS RESULTADOS (ORIENTAÇÃO PARA O RELATÓRIO)
+--------------------------------------------------------------------
+Ao gerar o relatório com base nos resultados do paciente, considere:
+
+1. Descrever o desempenho em cada parte separadamente, relacionando a
+   classificação obtida com a habilidade específica que aquela parte
+   avalia (Parte 1: atenção seletiva básica / velocidade; Parte 2:
+   seletividade com maior discriminação; Parte 3: atenção alternada e
+   flexibilidade).
+
+2. Descrever o Escore Total e sua classificação, como uma síntese do
+   funcionamento atencional geral do paciente.
+
+3. Observar e comentar padrões relevantes, como por exemplo:
+   - Queda de desempenho da Parte 1 para a Parte 3 (pode sugerir maior
+     dificuldade com tarefas que exigem alternância/flexibilidade).
+   - Desempenho estável ou crescente ao longo das partes (pode
+     sugerir boa capacidade de adaptação a demandas crescentes).
+   - Discrepância entre classificação geral e classificações das
+     partes individuais (deve ser mencionada, não ignorada).
+
+4. Evitar afirmações diagnósticas fechadas. As classificações do TAC
+   2 indicam padrões de desempenho atencional dentro de um teste
+   específico e devem ser interpretadas dentro de um contexto clínico
+   mais amplo (histórico do paciente, outros testes, entrevista
+   clínica), não como diagnóstico isolado.
+
+5. Usar linguagem técnica, porém clara, adequada a um relatório
+   psicológico/neuropsicológico profissional.
+ 
+INSTRUÇÃO FINAL PARA O MODELO
+--------------------------------------------------------------------
+Ao gerar o relatório, primeiro identifique em qual grande grupo etário
+o paciente se encaixa (criança/adolescente 5-14 ou jovem adulto) e,
+dentro do primeiro grupo, em qual subfaixa (5-7, 8-11 ou 12-14) ele
+está. Use essas referências apenas para ENRIQUECER a redação e dar
+contexto de desenvolvimento ao desempenho já classificado — nunca para
+alterar, recalcular ou "corrigir" a classificação (Muito Baixo, Baixo,
+Médio, Alto, Muito Alto) fornecida junto com o resultado do paciente.
+ 
+
+FIM DO ARQUIVO DE CONTEXTO
+====================================================================

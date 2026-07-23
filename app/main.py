@@ -1,31 +1,34 @@
-import os
-import json
+from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from dotenv import load_dotenv
 
 from app.auth import login_user, logout_user, get_user_from_session, templates, get_authenticated_client, build_display_name
+from app.config import get_settings
 from app.report_store import ensure_report_folders, save_dataframe, get_report_input_fields, get_report_folders
-from app.report_data import build_tac2_dataframes
+from app.report_data import build_tac2_dataframes, build_tac2_text_report
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env.local'))
+BASE_DIR = Path(__file__).resolve().parents[1]
+SETTINGS = get_settings()
 
-app = FastAPI(title="Report Psicologia API", version="1.0.0")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    ensure_report_folders()
+    yield
+
+
+app = FastAPI(title="Report Psicologia API", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SECRET_KEY", "dev-secret-key"),
+    secret_key=SETTINGS["secret_key"],
     same_site="lax",
     https_only=False,
     max_age=None,
 )
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.on_event("startup")
-def startup_event():
-    ensure_report_folders()
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,12 +38,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = (
-    os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    or os.getenv("SUPABASE_ANON_KEY")
-    or os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY")
-)
+SUPABASE_URL = SETTINGS["supabase_url"]
+SUPABASE_KEY = SETTINGS["supabase_key"]
 
 
 @app.get("/health")
@@ -141,12 +140,25 @@ async def api_patients(request: Request):
         raise HTTPException(status_code=401, detail="Não autenticado")
 
     client = get_authenticated_client(request)
-    response = client.table("patients").select("id, full_name").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
+    response = client.table("patients").select("id, full_name, birth_date").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
     if getattr(response, "error", None):
         raise HTTPException(status_code=500, detail=str(response.error))
 
     raw_patients = getattr(response, "data", []) or []
-    return [{"id": p.get("id"), "full_name": p.get("full_name") or "Paciente"} for p in raw_patients]
+    from datetime import date, datetime
+    today = date.today()
+    patients = []
+    for p in raw_patients:
+        age = ""
+        birth_value = p.get("birth_date")
+        if birth_value:
+            try:
+                birth_date = datetime.fromisoformat(str(birth_value)).date()
+                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+            except Exception:
+                age = ""
+        patients.append({"id": p.get("id"), "full_name": p.get("full_name") or "Paciente", "age": age})
+    return patients
 
 
 @app.get("/api/report-types")
@@ -193,25 +205,13 @@ async def create_report(request: Request):
     patient = raw_data[0]
 
     if report_name == "TAC 2":
-        report_dfs = build_tac2_dataframes(
+        report_text = build_tac2_text_report(
             client,
             patient["id"],
             patient.get("full_name") or "Paciente",
             input_data,
         )
-        results_df = report_dfs.get("results")
-        report_results = None
-        if results_df is not None and not results_df.empty:
-            try:
-                report_results = results_df.fillna("").to_dict(orient="records")[0]
-            except Exception:
-                report_results = None
-        return {
-            "ok": True,
-            "report_name": report_name,
-            "patient_id": patient_id,
-            "report_results": report_results,
-        }
+        return HTMLResponse(report_text)
     else:
         report_module = None
         try:
@@ -222,7 +222,9 @@ async def create_report(request: Request):
 
         if not report_module or not hasattr(report_module, 'build_report'):
             raise HTTPException(status_code=400, detail="Relatório não suportado")
-        report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", input_data)
+        report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", input_data)
+        if isinstance(report_output, str):
+            return HTMLResponse(report_output)
 
     return {"ok": True, "report_name": report_name, "patient_id": patient_id}
 

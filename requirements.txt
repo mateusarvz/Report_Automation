@@ -8,3 +8,4 @@ itsdangerous
 supabase
 python-multipart
 pandas
+pytest

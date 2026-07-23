@@ -90,7 +90,9 @@
                 patients.forEach(p => {
                     const opt = document.createElement('option');
                     opt.value = p.id;
-                    opt.textContent = p.full_name || 'Paciente';
+                    opt.textContent = p.age !== '' && p.age !== null && p.age !== undefined
+                        ? `${p.full_name || 'Paciente'} - ${p.age} anos`
+                        : (p.full_name || 'Paciente');
                     select.appendChild(opt);
                 });
                 select.disabled = false;
@@ -136,12 +138,146 @@
             if (resultsContainer) resultsContainer.innerHTML = '';
         }
 
+        function getReportInputRules(reportName) {
+            if (reportName === 'Teste A e B') {
+                return {
+                    resultado_parte_a: { min: 7, max: 24 },
+                    resultado_parte_b: { min: 1, max: 24 },
+                    resultado_parte_ba: { min: -24, max: 0 },
+                };
+            }
+            if (reportName === 'TAC 2') {
+                return {
+                    pontuacao_primeira_parte: { min: 0, max: 50 },
+                    pontuacao_segunda_parte: { min: 0, max: 7 },
+                    pontuacao_terceira_parte: { min: 0, max: 52 },
+                };
+            }
+            return null;
+        }
+
+        function isWithinRange(value, min, max) {
+            if (value === '' || value === null || value === undefined) return false;
+            const numeric = Number(value);
+            if (Number.isNaN(numeric)) return false;
+            return numeric >= min && numeric <= max;
+        }
+
+        function clearFieldError(fieldWrapper) {
+            fieldWrapper.classList.remove('field-error');
+            const message = fieldWrapper.querySelector('.field-error-message');
+            if (message) message.remove();
+        }
+
+        function setFieldError(fieldWrapper) {
+            if (!fieldWrapper.classList.contains('field-error')) {
+                fieldWrapper.classList.add('field-error');
+            }
+            if (!fieldWrapper.querySelector('.field-error-message')) {
+                const message = document.createElement('small');
+                message.className = 'field-error-message';
+                message.textContent = 'Valor inserido fora dos limites. Por favor escolha um valor válido';
+                message.style.color = '#dc2626';
+                message.style.display = 'block';
+                message.style.marginTop = '6px';
+                message.style.fontSize = '12px';
+                fieldWrapper.appendChild(message);
+            }
+        }
+
+        function clearReportFieldErrors() {
+            document.querySelectorAll('#report-input-container .form-row').forEach(clearFieldError);
+        }
+
+        let reportSubmitAttempted = false;
+
+        function validateReportInputs(reportName) {
+            const rules = getReportInputRules(reportName);
+            if (!rules) return true;
+
+            let valid = true;
+            clearReportFieldErrors();
+
+            Object.entries(rules).forEach(([fieldName, range]) => {
+                const input = document.getElementById(fieldName);
+                const fieldWrapper = input ? input.closest('.form-row') : null;
+                const hasValue = input && input.value !== '';
+                const fieldValid = input && isWithinRange(input.value, range.min, range.max);
+                if (reportSubmitAttempted && hasValue && !fieldValid && fieldWrapper) {
+                    setFieldError(fieldWrapper);
+                    valid = false;
+                } else if (fieldWrapper) {
+                    clearFieldError(fieldWrapper);
+                }
+            });
+
+            return valid;
+        }
+
+        function buildPrintPreviewShell(reportHtml) {
+            return `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8" />
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                    <style>
+                        @page { size: A4; margin: 18mm; }
+                        body { margin: 0; background: #e5e7eb; font-family: Arial, Helvetica, sans-serif; }
+                        .page {
+                            max-width: 210mm;
+                            min-height: 297mm;
+                            margin: 0 auto;
+                            background: #fff;
+                            box-sizing: border-box;
+                            padding: 22mm 18mm;
+                            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="page">${reportHtml}</div>
+                </body>
+                </html>
+            `;
+        }
+
+        function renderHtmlReport(reportHtml) {
+            const container = document.getElementById('report-results-container');
+            container.innerHTML = '';
+            const panel = document.createElement('section');
+            panel.className = 'section';
+            panel.style.marginTop = '16px';
+
+            const card = document.createElement('div');
+            card.className = 'form-card';
+
+            const heading = document.createElement('h2');
+            heading.textContent = 'Previa do relatorio';
+            card.appendChild(heading);
+
+            const iframe = document.createElement('iframe');
+            iframe.title = 'Previa do relatorio';
+            iframe.style.width = '100%';
+            iframe.style.minHeight = '900px';
+            iframe.style.border = '1px solid #cbd5e1';
+            iframe.style.borderRadius = '12px';
+            iframe.style.background = '#fff';
+            iframe.srcdoc = buildPrintPreviewShell(reportHtml);
+            card.appendChild(iframe);
+
+            panel.appendChild(card);
+            container.appendChild(panel);
+        }
+
         async function loadReportFields(reportName) {
             const fieldsContainer = document.getElementById('report-input-container');
             fieldsContainer.innerHTML = '';
+            clearReportContainers();
             if (!reportName) {
                 return;
             }
+            reportSubmitAttempted = false;
 
             try {
                 const res = await fetch(`/api/report-fields?report_name=${encodeURIComponent(reportName)}`);
@@ -179,6 +315,12 @@
                     if (field.required) input.required = true;
                     if (field.min !== undefined) input.min = field.min;
                     if (field.max !== undefined) input.max = field.max;
+                    input.addEventListener('input', () => {
+                        if (reportSubmitAttempted) validateReportInputs(reportName);
+                    });
+                    input.addEventListener('change', () => {
+                        if (reportSubmitAttempted) validateReportInputs(reportName);
+                    });
                     fieldWrapper.appendChild(input);
 
                     card.appendChild(fieldWrapper);
@@ -211,7 +353,6 @@
         document.getElementById('report-patient').addEventListener('change', updateGenerateButtonState);
         document.getElementById('report-type').addEventListener('change', () => {
             updateGenerateButtonState();
-            clearReportContainers();
         });
 
         document.getElementById('generate-btn').addEventListener('click', async () => {
@@ -226,20 +367,32 @@
             document.querySelectorAll('#report-input-container input').forEach(inp => {
                 if (inp.name) inputs[inp.name] = inp.type === 'number' ? (inp.value === '' ? null : Number(inp.value)) : inp.value;
             });
+            reportSubmitAttempted = true;
+            if (!validateReportInputs(reportName)) return;
+            clearReportContainers();
             try {
                 const res = await fetch('/api/reports', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ patient_id: patientId, report_name: reportName, input_data: inputs }),
                 });
-                const data = await res.json();
+                const contentType = res.headers.get('content-type') || '';
                 if (!res.ok) {
-                    throw new Error(data.detail || 'Erro ao gerar relatório');
+                    const errorText = contentType.includes('application/json')
+                        ? ((await res.json()).detail || 'Erro ao gerar relatório')
+                        : (await res.text()) || 'Erro ao gerar relatório';
+                    throw new Error(errorText);
                 }
-                if (data.report_results) {
-                    loadReportResults(reportName, data.report_results);
+
+                if (contentType.includes('text/html')) {
+                    renderHtmlReport(await res.text());
                 } else {
-                    loadReportInterface(reportName);
+                    const data = await res.json();
+                    if (data.report_results) {
+                        loadReportResults(reportName, data.report_results);
+                    } else {
+                        loadReportInterface(reportName);
+                    }
                 }
             } catch (error) {
                 alert(error.message || 'Erro ao gerar relatório');

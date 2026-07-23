@@ -1,18 +1,14 @@
-import os
 from typing import Optional
 from fastapi import HTTPException, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from supabase import create_client, Client
-from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env.local'))
+from app.config import get_settings
 
-SUPABASE_URL = os.getenv('SUPABASE_URL') or os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = (
-    os.getenv('SUPABASE_ANON_KEY')
-    or os.getenv('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
-)
+SETTINGS = get_settings()
+SUPABASE_URL = SETTINGS["supabase_url"]
+SUPABASE_KEY = SETTINGS["supabase_key"]
 
 supabase: Optional[Client] = None
 if SUPABASE_URL and SUPABASE_KEY:

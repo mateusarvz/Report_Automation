@@ -44,16 +44,17 @@ def test_tac2_report_does_not_save_dataframe_files(monkeypatch):
     monkeypatch.setattr(main_module, "get_report_folders", lambda: ["TAC 2"])
     monkeypatch.setattr(
         main_module,
-        "build_tac2_dataframes",
-        lambda client, patient_id, patient_name, input_data: {
-            "results": pd.DataFrame([{"patient_id": patient_id, "score_total_mapeado": 10.0}]),
-        },
+        "build_tac2_text_report",
+        lambda client, patient_id, patient_name, input_data: (
+            "TAC (Teste de atenção por cancelamento)\n"
+            "O TAC é um instrumento utilizado para avaliar a atenção sustentada, a atenção seletiva, a velocidade de processamento visual e o controle atencional.\n"
+            "\n"
+            "RESULTADOS\n"
+            "| Indicador | Pontuação | Classificação |\n"
+            "|-----------|-----------|---------------|\n"
+            "| Geral | 10 | Baixa |\n"
+        ),
     )
-
-    def fail_save_dataframe(*args, **kwargs):
-        raise AssertionError("TAC2 should not save dataframe files")
-
-    monkeypatch.setattr(main_module, "save_dataframe", fail_save_dataframe)
 
     client = TestClient(app)
     response = client.post(
@@ -66,5 +67,8 @@ def test_tac2_report_does_not_save_dataframe_files(monkeypatch):
     )
 
     assert response.status_code == 200
-    assert response.json()["report_name"] == "TAC 2"
-    assert response.json()["report_results"]["score_total_mapeado"] == 10.0
+    assert response.headers["content-type"].startswith("text/html")
+    assert "TAC (Teste de atenção por cancelamento)" in response.text
+    assert "Paciente:" not in response.text
+    assert "Idade:" not in response.text
+    assert "| Indicador | Pontuação | Classificação |" in response.text
