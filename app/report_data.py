@@ -1,3 +1,4 @@
+import html
 import importlib.util
 from pathlib import Path
 
@@ -69,6 +70,12 @@ def _format_number(value):
     return f"{numeric:.2f}".rstrip("0").rstrip(".")
 
 
+def _escape_html(value):
+    if value is None:
+        return ""
+    return html.escape(str(value)).replace("\n", "<br />")
+
+
 def build_tac2_text_report(
     client,
     patient_id: str,
@@ -78,6 +85,15 @@ def build_tac2_text_report(
     input_data = input_data or {}
     report_data = build_tac2_dataframes(client, patient_id, patient_name, input_data)
     results = report_data.get("results")
+    note_text = input_data.get("observacoes_sobre_o_teste")
+    note_html = ""
+    if note_text:
+        note_html = (
+            '<div style="margin-top:20px;">'
+            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Observações sobre o Teste</h3>'
+            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{_escape_html(note_text)}</div>'
+            '</div>'
+        )
     if results is None or results.empty:
         return (
             "<div style=\"font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.45; color: #111827;\">"
@@ -99,6 +115,7 @@ def build_tac2_text_report(
             "<tr><td style=\"border: 1px solid #000000; padding: 8px; font-weight: 700;\">Geral</td><td style=\"border: 1px solid #000000; padding: 8px; text-align: center; font-weight: 700;\">N/A</td><td style=\"border: 1px solid #000000; padding: 8px; text-align: center; font-weight: 700;\">N/A</td></tr>"
             "</tbody>"
             "</table>"
+            f"{note_html}"
             "</div>"
         )
 
@@ -130,6 +147,5 @@ def build_tac2_text_report(
     return (
         "<div style=\"font-family: Arial, Helvetica, sans-serif; color: #111827;\">"
         f"{description}"
-        f"{table}"
-        "</div>\n"
+        f"{table}"        f"{note_html}"        "</div>\n"
     )

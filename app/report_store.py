@@ -39,7 +39,16 @@ def load_report_module(report_name: str):
 def get_report_input_fields(report_name: str):
     module = load_report_module(report_name)
     if hasattr(module, 'get_input_schema'):
-        return module.get_input_schema()
+        fields = list(module.get_input_schema() or [])
+        if not any(field.get('name') == 'observacoes_sobre_o_teste' for field in fields):
+            fields.append({
+                'name': 'observacoes_sobre_o_teste',
+                'label': 'Observações sobre o Teste',
+                'type': 'textarea',
+                'placeholder': 'Digite observações que serão adicionadas ao relatório',
+                'required': False,
+            })
+        return fields
     return []
 
 

@@ -19,6 +19,7 @@
                     <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
                     <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
                     <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
+                    <a href="/chat-gemini" class="{{ 'active' if current_path == '/chat-gemini' else '' }}">CHAT GEMINI</a>
                 </nav>
             </div>
         </aside>
@@ -307,14 +308,21 @@
                     label.textContent = field.label;
                     fieldWrapper.appendChild(label);
 
-                    const input = document.createElement('input');
-                    input.type = field.type || 'text';
+                    let input;
+                    if (field.type === 'textarea') {
+                        input = document.createElement('textarea');
+                        input.rows = field.rows || 4;
+                    } else {
+                        input = document.createElement('input');
+                        input.type = field.type || 'text';
+                        if (field.min !== undefined) input.min = field.min;
+                        if (field.max !== undefined) input.max = field.max;
+                    }
+
                     input.id = field.name;
                     input.name = field.name;
                     input.placeholder = field.placeholder || '';
                     if (field.required) input.required = true;
-                    if (field.min !== undefined) input.min = field.min;
-                    if (field.max !== undefined) input.max = field.max;
                     input.addEventListener('input', () => {
                         if (reportSubmitAttempted) validateReportInputs(reportName);
                     });
@@ -364,8 +372,13 @@
             const patientId = document.getElementById('report-patient').value;
             const reportName = document.getElementById('report-type').value;
             const inputs = {};
-            document.querySelectorAll('#report-input-container input').forEach(inp => {
-                if (inp.name) inputs[inp.name] = inp.type === 'number' ? (inp.value === '' ? null : Number(inp.value)) : inp.value;
+            document.querySelectorAll('#report-input-container input, #report-input-container textarea').forEach(inp => {
+                if (!inp.name) return;
+                if (inp.type === 'number') {
+                    inputs[inp.name] = inp.value === '' ? null : Number(inp.value);
+                } else {
+                    inputs[inp.name] = inp.value;
+                }
             });
             reportSubmitAttempted = true;
             if (!validateReportInputs(reportName)) return;

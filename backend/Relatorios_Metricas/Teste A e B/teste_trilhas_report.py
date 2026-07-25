@@ -6,12 +6,6 @@ import numpy as np
 import pandas as pd
 
 
-def _escape_html(value):
-    if value is None:
-        return ""
-    return html.escape(str(value)).replace("\n", "<br />")
-
-
 def classify_score_metric(value) -> str:
     try:
         numeric_value = float(value)
@@ -79,6 +73,12 @@ def _map_score(df: pd.DataFrame, raw_score, age):
     return float(value) if pd.notna(value) else np.nan
 
 
+def _escape_html(value):
+    if value is None:
+        return ""
+    return html.escape(str(value)).replace("\n", "<br />")
+
+
 def _html_table(results_row):
     return (
         "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt;\">"
@@ -111,16 +111,6 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
     score_b = _map_score(dfs["parte_b"], b, age)
     score_ba = _map_score(dfs["parte_ba"], ba, age)
 
-    note_text = input_data.get("observacoes_sobre_o_teste")
-    note_html = ""
-    if note_text:
-        note_html = (
-            '<div style="margin-top:20px;">'
-            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Observações sobre o Teste</h3>'
-            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{_escape_html(note_text)}</div>'
-            '</div>'
-        )
-
     results = pd.DataFrame([{
         "patient_id": patient_id,
         "patient_name": patient_name,
@@ -141,6 +131,15 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
         if age is not None
         else ""
     )
+    note_text = input_data.get("observacoes_sobre_o_teste")
+    note_html = ""
+    if note_text:
+        note_html = (
+            '<div style="margin-top:20px;">'
+            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Observações sobre o Teste</h3>'
+            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{_escape_html(note_text)}</div>'
+            '</div>'
+        )
     html = (
         "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827;\">"
         "<p style=\"margin:0 0 10px 0; text-align:justify;\">"
