@@ -147,19 +147,12 @@ def build_torre_londres_report(client, patient_id, patient_name, input_data, rep
         'm5_categoria': classify_score_metric(score_m5) if pd.notna(score_m5) else "N/A",
     }
 
-    age_html = (
-        f"<p style=\"margin:0 0 12px 0;\"><strong>Idade do paciente:</strong> {age} anos</p>"
-        if age is not None
-        else ""
-    )
-
     html_text = (
         "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827;\">"
         "<p style=\"margin:0 0 10px 0; text-align:justify;\">"
         "<strong>ToL (Teste da Torre de Londres)</strong> \u00e9 um instrumento neuropsicol\u00f3gico que avalia fun\u00e7\u00f5es executivas, "
         "principalmente planejamento e resolu\u00e7\u00e3o de problemas, atrav\u00e9s de tarefas como mover pe\u00e7as entre pinos seguindo regras espec\u00edficas."
         "</p>"
-        f"{age_html}"
         f"{_html_table(row_data)}"
         "</div>\n"
     )

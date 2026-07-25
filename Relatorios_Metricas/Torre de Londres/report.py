@@ -4,27 +4,27 @@ def get_input_schema():
             "name": "pontuacao_total",
             "label": "Pontuação Total",
             "type": "number",
-            "placeholder": "1 - 36",
+            "placeholder": "0 a 36",
             "required": True,
-            "min": 1,
+            "min": 0,
             "max": 36,
         },
         {
             "name": "pontuacao_4_movimentos",
             "label": "Pontuação nos itens de 4 movimentos",
             "type": "number",
-            "placeholder": "1 - 12",
+            "placeholder": "0 a 12",
             "required": True,
-            "min": 1,
+            "min": 0,
             "max": 12,
         },
         {
             "name": "pontuacao_5_movimentos",
             "label": "Pontuação nos itens de 5 movimentos",
             "type": "number",
-            "placeholder": "1 - 12",
+            "placeholder": "0 a 12",
             "required": True,
-            "min": 1,
+            "min": 0,
             "max": 12,
         },
     ]
@@ -32,9 +32,9 @@ def get_input_schema():
 
 def _validate_inputs(input_data):
     rules = {
-        "pontuacao_total": (1, 36),
-        "pontuacao_4_movimentos": (1, 12),
-        "pontuacao_5_movimentos": (1, 12),
+        "pontuacao_total": (0, 36),
+        "pontuacao_4_movimentos": (0, 12),
+        "pontuacao_5_movimentos": (0, 12),
     }
     for field, (min_value, max_value) in rules.items():
         value = input_data.get(field)

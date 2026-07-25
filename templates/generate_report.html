@@ -1,50 +1,59 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gerar Relatório - Report Psicologia</title>
     <link rel="stylesheet" href="/static/style.css" />
 </head>
+
 <body>
     <div class="app-shell">
         <aside class="sidebar">
             <div>
                 <div class="brand-row">
                     <img class="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="Logo CogniReports" />
-                    <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
+                    <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span>
+                    </div>
                 </div>
                 <nav>
-                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
-                    <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova
+                        Avaliação</a>
+                    <a href="/register-patient"
+                        class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
                     <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
                     <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
-                    <a href="/chat-gemini" class="{{ 'active' if current_path == '/chat-gemini' else '' }}">CHAT GEMINI</a>
+                    <a href="/chat-gemini" class="{{ 'active' if current_path == '/chat-gemini' else '' }}">CHAT
+                        GEMINI</a>
                 </nav>
             </div>
         </aside>
         <main class="content">
             <div class="topbar">
                 <section class="page-header">
-                    <img class="page-icon-image" src="/static/assets/icons/nova-avaliacao.png" alt="Ícone de Nova Avaliação" />
+                    <img class="page-icon-image" src="/static/assets/icons/nova-avaliacao.png"
+                        alt="Ícone de Nova Avaliação" />
                     <div>
                         <h1>Nova Avaliação</h1>
                     </div>
                 </section>
                 <div class="user-menu" id="user-menu">
                     <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
-                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png"
+                            alt="Ícone de usuário" />
                         <div class="user-menu-text">
-                            <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
+                            <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta
+                                logada' }}</span>
                             {% set subtitle = '' %}
                             {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
-                                {% set subtitle = 'Psicólogo' %}
+                            {% set subtitle = 'Psicólogo' %}
                             {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
-                                {% set subtitle = 'Psicóloga' %}
+                            {% set subtitle = 'Psicóloga' %}
                             {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
-                                {% set subtitle = 'Neuropsicólogo' %}
+                            {% set subtitle = 'Neuropsicólogo' %}
                             {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
-                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% set subtitle = 'Neuropsicóloga' %}
                             {% endif %}
                             {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
                         </div>
@@ -76,12 +85,20 @@
         </main>
     </div>
     <script>
+        let patientsList = [];
+        const reportMinAges = {
+            'TAC 2': 5,
+            'Teste de Trilhas A e B': 6,
+            'Torre de Londres': 11
+        };
+
         async function loadPatients() {
             const select = document.getElementById('report-patient');
             try {
                 const res = await fetch('/api/patients');
                 if (!res.ok) throw new Error('failed');
                 const patients = await res.json();
+                patientsList = patients;
                 select.innerHTML = '';
                 if (!Array.isArray(patients) || patients.length === 0) {
                     select.disabled = true;
@@ -137,14 +154,23 @@
             const resultsContainer = document.getElementById('report-results-container');
             if (inputContainer) inputContainer.innerHTML = '';
             if (resultsContainer) resultsContainer.innerHTML = '';
+            const existingError = document.getElementById('age-error-msg');
+            if (existingError) existingError.remove();
         }
 
         function getReportInputRules(reportName) {
-            if (reportName === 'Teste A e B') {
+            if (reportName === 'Teste de Trilhas A e B') {
                 return {
-                    resultado_parte_a: { min: 7, max: 24 },
-                    resultado_parte_b: { min: 1, max: 24 },
+                    resultado_parte_a: { min: 0, max: 24 },
+                    resultado_parte_b: { min: 0, max: 24 },
                     resultado_parte_ba: { min: -24, max: 0 },
+                };
+            }
+            if (reportName === 'Torre de Londres') {
+                return {
+                    pontuacao_total: { min: 0, max: 36 },
+                    pontuacao_4_movimentos: { min: 0, max: 12 },
+                    pontuacao_5_movimentos: { min: 0, max: 12 },
                 };
             }
             if (reportName === 'TAC 2') {
@@ -358,13 +384,43 @@
             button.disabled = !patientSelect.value || !reportSelect.value;
         }
 
-        document.getElementById('report-patient').addEventListener('change', updateGenerateButtonState);
+        document.getElementById('report-patient').addEventListener('change', () => {
+            updateGenerateButtonState();
+            const existingError = document.getElementById('age-error-msg');
+            if (existingError) existingError.remove();
+        });
         document.getElementById('report-type').addEventListener('change', () => {
             updateGenerateButtonState();
+            const existingError = document.getElementById('age-error-msg');
+            if (existingError) existingError.remove();
         });
 
         document.getElementById('generate-btn').addEventListener('click', async () => {
+            const patientId = document.getElementById('report-patient').value;
             const reportName = document.getElementById('report-type').value;
+
+            const existingError = document.getElementById('age-error-msg');
+            if (existingError) existingError.remove();
+
+            const patient = patientsList.find(p => String(p.id) === String(patientId));
+            const minAge = reportMinAges[reportName];
+
+            if (patient && minAge !== undefined) {
+                const age = patient.age !== "" && patient.age !== null && patient.age !== undefined ? Number(patient.age) : NaN;
+                if (Number.isNaN(age) || age < minAge) {
+                    clearReportContainers();
+                    const errorMsg = document.createElement('div');
+                    errorMsg.id = 'age-error-msg';
+                    errorMsg.style.color = '#dc2626';
+                    errorMsg.style.marginTop = '12px';
+                    errorMsg.style.fontSize = '14px';
+                    errorMsg.style.fontWeight = 'bold';
+                    errorMsg.textContent = `Paciente não possui a idade mínima necessaria para este relatório (Idade mínima: ${minAge} anos).`;
+                    document.getElementById('report-selection-card').appendChild(errorMsg);
+                    return;
+                }
+            }
+
             await loadReportFields(reportName);
         });
 
@@ -481,4 +537,5 @@
         loadReportTypes();
     </script>
 </body>
+
 </html>

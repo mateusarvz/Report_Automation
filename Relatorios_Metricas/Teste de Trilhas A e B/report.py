@@ -4,18 +4,18 @@ def get_input_schema():
             "name": "resultado_parte_a",
             "label": "Resultados parte A",
             "type": "number",
-            "placeholder": "7 - 24",
+            "placeholder": "0 a 24",
             "required": True,
-            "min": 7,
+            "min": 0,
             "max": 24,
         },
         {
             "name": "resultado_parte_b",
             "label": "Resultado da parte B",
             "type": "number",
-            "placeholder": "1 - 24",
+            "placeholder": "0 a 24",
             "required": True,
-            "min": 1,
+            "min": 0,
             "max": 24,
         },
         {
@@ -32,8 +32,8 @@ def get_input_schema():
 
 def _validate_inputs(input_data):
     rules = {
-        "resultado_parte_a": (7, 24),
-        "resultado_parte_b": (1, 24),
+        "resultado_parte_a": (0, 24),
+        "resultado_parte_b": (0, 24),
         "resultado_parte_ba": (-24, 0),
     }
     for field, (min_value, max_value) in rules.items():
