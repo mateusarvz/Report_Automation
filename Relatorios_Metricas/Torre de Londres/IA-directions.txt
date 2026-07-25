@@ -1,0 +1,129 @@
+O "Teste de Torres" é uma família de instrumentos neuropsicológicos utilizados para avaliar **funções executivas**, com ênfase em **planejamento**, **resolução de problemas** e **organização de ações em etapas**. As três versões mais utilizadas são:
+ 
+- **Torre de Londres (TOL)** — criada por Tim Shallice em 1982; versão brasileira validada: **TOL-BR**.
+- **Torre de Hanói (TH)** — variante com maior carga de memória de trabalho e menor carga de inibição de resposta pré-potente.
+- **Torre de Toronto (TT)** — variante menos utilizada clinicamente no Brasil.
+ 
+Embora tratadas como "isomórficas" (equivalentes), a literatura mostra que **Torre de Londres e Torre de Hanói não são psicometricamente intercambiáveis** — cada uma acessa de forma distinta os subcomponentes das funções executivas, então a IA não deve tratar resultados de uma versão como diretamente comparáveis a normas da outra.
+ 
+### Funções cognitivas avaliadas
+- Planejamento prospectivo (antecipar mentalmente a sequência de movimentos antes de agir)
+- Memória de trabalho visuoespacial
+- Controle inibitório (não realizar o movimento mais óbvio/imediato)
+- Flexibilidade cognitiva (reformular o plano quando a estratégia inicial falha)
+- Automonitoramento da execução
+ 
+### Base neuroanatômica
+O teste é particularmente sensível ao funcionamento do **córtex pré-frontal dorsolateral**. No estudo original de Shallice (1982), pacientes com lesões na região anterior do córtex do hemisfério esquerdo apresentaram desempenho inferior a pacientes com lesões posteriores e a controles saudáveis.
+ 
+### Público-alvo (TOL-BR)
+A versão brasileira validada (TOL-BR) tem como público-alvo **crianças de 10 anos até adultos de 59 anos**. Para crianças menores ou idosos acima dessa faixa, é necessário usar instrumentos com normas específicas para a idade (ex.: versões infantis da Torre de Londres de Krikorian et al., 1994, usadas a partir de idades menores) — a IA deve sinalizar quando a idade do avaliando está fora da faixa normatizada disponível, em vez de aplicar a norma incorretamente.
+ 
+---
+ 
+## 2. COMO O TESTE FUNCIONA (ADMINISTRAÇÃO)
+ 
+- O material consiste em **hastes/pinos de alturas diferentes** e **esferas/discos coloridos**.
+- O avaliando deve mover as peças de uma configuração inicial até reproduzir uma **configuração-alvo** mostrada em um cartão/imagem.
+- Regras típicas: mover uma peça por vez; só é permitido mover a peça que está no topo da haste; cada haste comporta um número limitado de peças (ex.: a primeira haste comporta até 3 peças).
+- Existe um **número mínimo de movimentos** necessário para cada item/problema — quanto mais itens exigem estratégia com maior número de passos, maior a demanda de planejamento.
+- Cada item pode ter **até 3 tentativas**.
+ 
+### Registros feitos durante a aplicação
+1. Número de movimentos realizados por item (comparado ao número mínimo necessário).
+2. Tempo de planejamento (latência entre a apresentação do problema e o primeiro movimento).
+3. Tempo total de execução.
+4. Número de tentativas até o acerto (1ª, 2ª ou 3ª).
+5. Violações de regra (ex.: mover mais de uma peça, mover peça que não está no topo).
+6. Padrão qualitativo de erro (impulsivo, hesitante, corrige sozinho, não corrige mesmo após feedback).
+ 
+---
+ 
+## 3. CRITÉRIOS DE PONTUAÇÃO (Sistema Krikorian et al., 1994 — amplamente usado)
+ 
+Este é o sistema de pontuação mais citado na literatura brasileira para a Torre de Londres:
+ 
+| Situação | Pontos |
+|---|---|
+| Resolve com número correto de movimentos na 1ª tentativa | 3 |
+| Resolve com número correto de movimentos na 2ª tentativa | 2 |
+| Resolve com número correto de movimentos na 3ª tentativa | 1 |
+| Não resolve em nenhuma das 3 tentativas | 0 |
+ 
+- Com **12 itens/problemas**, a pontuação bruta máxima é de **36 pontos**.
+- Recomenda-se registrar também tempo de planejamento e tempo de execução de cada item separadamente, pois esses dados enriquecem a análise qualitativa (ver seção 5).
+- Sempre que a IA relatar um "escore total", deve explicitar de qual sistema de pontuação e de qual versão do instrumento esse número deriva — escores brutos de instrumentos diferentes não são comparáveis entre si.
+ 
+---
+ 
+## 4. COMO ANALISAR COM BASE NA IDADE
+ 
+A interpretação de qualquer escore no Teste de Torres **deve ser sempre relativa à idade e escolaridade** do avaliando, nunca em valor absoluto. Diretrizes gerais que a IA deve seguir:
+ 
+### 4.1 Crianças (faixa pré-escolar/escolar, dependendo da versão normatizada)
+- O planejamento prospectivo ainda está em desenvolvimento; é esperado um desempenho mais baixo e maior número de tentativas do que em adultos, isso **não indica necessariamente disfunção**.
+- Erros por impulsividade motora (mover a peça mais óbvia sem planejar) são mais frequentes e esperados nessa fase e devem ser interpretados à luz da maturação do córtex pré-frontal, ainda incompleta.
+- É fundamental comparar o desempenho da criança com **normas específicas para a mesma faixa etária e escolaridade**, nunca com normas de adultos.
+- Estudos apontam correlação negativa entre desatenção/hiperatividade e desempenho no teste em crianças — um escore baixo em uma criança com queixas de desatenção deve ser contextualizado dentro de uma bateria mais ampla, e não interpretado isoladamente como TDAH.
+ 
+### 4.2 Adolescentes e adultos jovens (público-alvo típico do TOL-BR, 10–59 anos)
+- É a faixa em que o instrumento possui normatização mais robusta no Brasil (TOL-BR).
+- O desempenho esperado é de maior eficiência: menor tempo de planejamento incorreto, menor número de violações de regra e uso mais consistente de estratégia (ex.: mover primeiro peças que liberam movimentos futuros).
+- Comparações devem sempre usar a tabela normativa da faixa etária e nível educacional correspondente do manual do instrumento utilizado.
+ 
+### 4.3 Adultos de meia-idade e idosos (acima da faixa normatizada do TOL-BR, quando aplicável)
+- Estudos com idosos, inclusive com Comprometimento Cognitivo Leve (CCL), mostram que o desempenho tende a diferir de adultos mais jovens, mas as diferenças entre subgrupos clínicos podem não atingir significância estatística — ou seja, um escore levemente reduzido em pessoa idosa não deve, isoladamente, ser tratado como sinal de comprometimento.
+- Fatores concorrentes (escolaridade, fadiga, déficits sensoriais, humor/depressão) devem ser considerados antes de atribuir baixo desempenho a disfunção executiva.
+- Se não houver norma validada para a idade do avaliando, a IA deve declarar essa limitação explicitamente em vez de extrapolar normas de outra faixa etária.
+ 
+### 4.4 Regra geral para a IA
+Ao processar qualquer resultado, a IA deve seguir esta sequência:
+1. Identificar a idade e escolaridade do avaliando.
+2. Verificar se existe norma validada para essa faixa no instrumento utilizado.
+3. Se existir, comparar o escore bruto com a faixa normativa (percentil/escore z, se disponível) — nunca comparar apenas ao valor máximo teórico do teste.
+4. Se não existir norma para a idade, sinalizar essa limitação de forma explícita e sugerir cautela na interpretação.
+ 
+---
+ 
+## 5. COMO ANALISAR COM BASE NOS RESULTADOS (INTERPRETAÇÃO QUALITATIVA)
+ 
+Além do escore numérico, a análise qualitativa do **padrão** de desempenho é o que agrega mais valor clínico. Padrões descritos na literatura:
+ 
+| Padrão observado | Hipótese associada (sempre como hipótese, não conclusão) |
+|---|---|
+| Tempo de planejamento muito curto + muitos movimentos além do mínimo | Sugere impulsividade; padrão comum em quadros de desatenção/hiperatividade ou disfunção pré-frontal |
+| Tempo de planejamento longo + execução correta | Sugere boa autorregulação e planejamento eficiente |
+| Tempo de planejamento longo + execução incorreta | Sugere dificuldade em traduzir o plano mental em ação — possível relação com memória de trabalho ou monitoramento da execução |
+| Quebras repetidas de regra, mesmo após relembradas | Sugere baixo controle inibitório ou dificuldade em reter instruções |
+| Melhora progressiva ao longo das tentativas do mesmo item | Sugere capacidade de aprendizagem com feedback preservada |
+| Nenhuma melhora mesmo após 3 tentativas e feedback | Sugere maior rigidez cognitiva ou dificuldade de autocorreção |
+ 
+### Passos recomendados para a IA gerar uma análise:
+1. **Descrever o desempenho quantitativo**: escore total, comparação com a norma de idade/escolaridade quando disponível.
+2. **Descrever o padrão qualitativo**: cruzar tempo de planejamento, número de movimentos e número de tentativas, usando a tabela acima como referência.
+3. **Contextualizar** com outras informações disponíveis (queixa clínica, histórico escolar, outros testes da bateria) — o Teste de Torres nunca deve ser interpretado isoladamente.
+4. **Formular hipóteses, não diagnósticos**: usar sempre linguagem como "os dados são compatíveis com...", "sugere-se investigar...", "recomenda-se correlacionar com...".
+5. **Recomendar validação profissional**: toda saída deve indicar que a interpretação final deve ser revisada e assinada por neuropsicólogo(a) responsável pelo caso.
+ 
+---
+ 
+## 6. LIMITAÇÕES DO INSTRUMENTO QUE A IA DEVE CONSIDERAR
+ 
+- A versão tradicional (não computadorizada) apresenta **consistência interna relativamente baixa** em comparação a versões computadorizadas mais recentes, o que exige cautela ao tratar um único escore como medida altamente precisa.
+- A versão original de madeira apresenta **efeito de teto** (itens fáceis demais, resolvidos até por pessoas com dificuldades reais de planejamento); versões revisadas (como o TOL-BR) buscaram corrigir esse problema.
+- O teste deve compor uma **bateria mais ampla** de avaliação executiva (ex.: junto a testes de trilhas, fluência verbal, Stroop), e nunca ser a única base para uma conclusão sobre função executiva.
+- Torre de Londres e Torre de Hanói não devem ser tratadas como equivalentes/substituíveis entre si nas conclusões.
+ 
+---
+ 
+## 7. MODELO DE SAÍDA SUGERIDO PARA A IA
+ 
+Ao gerar uma análise de caso, a IA deve estruturar a resposta assim:
+ 
+```
+1. Identificação: idade, escolaridade, versão do instrumento aplicada
+2. Resultado quantitativo: escore bruto, faixa normativa correspondente (se houver)
+3. Padrão qualitativo observado: (tempos, movimentos, tentativas, violações de regra)
+4. Hipóteses levantadas (linguagem não-diagnóstica)
+5. Pontos de atenção / limitações da análise
+6. Recomendação: validação e fechamento do laudo por profissional habilitado

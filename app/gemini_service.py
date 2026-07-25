@@ -41,16 +41,20 @@ async def generate_interpretation(report_name: str, observations: str, table_htm
     # 4. Manual / directions (IA-directions.txt)
     prompt = (
         "INSTRUÇÃO PRINCIPAL (CRÍTICA):\n"
-        "Atue como um profissional de neuropedagogia e escreva um texto de 20 a 100 palavras. "
+        "Atue como um profissional de neuropedagogia e escreva um texto de 100 a 200 palavras. Ultilize linguagem formal, profissional para a área de psicologia."
         "Evite dar diagnosticos. Apenas faça uma analise com todas as informações que voce receber"
         "Atue sempre como se você estivesse escrevendo a sua interpretação dos resultados de um paciente em um teste.\n\n"
         
+        "NÃO FAÇA O SEGUINTE:\n"
+        "Voce não deve detalhar as informações dos resultados dos testes."
+        "Voce não deve fazer sugestões nem recomendações"
+        "Voce nao deve citar a idade do paciente\n"
+
         "DADOS DE ENTRADA DO PACIENTE E DO TESTE:\n"
         f"Idade do Paciente: {age_info}\n"
-        f"Opinião do Profissional da área dobre o paciente:\n{observations or 'Nenhuma observação inserida.'}\n\n"
+        f"Opinião do Profissional da área sobre o paciente:\n{observations or 'Nenhuma observação inserida.'} Trate essa opnião como se ela fosse pensada por voce"
+        "Qualquer informação da Opinião do Profissional da área sobre o paciente Deve ser tratada como se fosse sua. Portando voce deve falar dela como se fossem as suas proprias conclusões"
         f"Resultados:\n{table_html}\n\n"
-        
-        "Voce não deve detalhar as informações dos reultados, pois essas informações ja serão mostradas ao usuario.\n"
         
         "DIRETRIZES E MANUAL DE REFERÊNCIA DO TESTE:\n"
         f"{directions_content or 'Caso nao hajam diretrizes, Voce deve falar NAO HA DIRETRIZES claramente ao final do seu prompt'}\n"
