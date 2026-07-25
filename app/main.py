@@ -1,3 +1,5 @@
+import os
+import httpx
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Form
@@ -196,7 +198,7 @@ async def create_report(request: Request):
         raise HTTPException(status_code=400, detail="Relatório inválido")
 
     client = get_authenticated_client(request)
-    patient_resp = client.table("patients").select("id, full_name").eq("psychologist_id", user["id"]).eq("id", patient_id).limit(1).execute()
+    patient_resp = client.table("patients").select("id, full_name, birth_date").eq("psychologist_id", user["id"]).eq("id", patient_id).limit(1).execute()
     if getattr(patient_resp, "error", None):
         raise HTTPException(status_code=500, detail=str(patient_resp.error))
     raw_data = getattr(patient_resp, "data", []) or []
@@ -204,6 +206,7 @@ async def create_report(request: Request):
         raise HTTPException(status_code=404, detail="Paciente não encontrado")
     patient = raw_data[0]
 
+    report_text = ""
     if report_name == "TAC 2":
         report_text = build_tac2_text_report(
             client,
@@ -211,7 +214,6 @@ async def create_report(request: Request):
             patient.get("full_name") or "Paciente",
             input_data,
         )
-        return HTMLResponse(report_text)
     else:
         report_module = None
         try:
@@ -224,7 +226,32 @@ async def create_report(request: Request):
             raise HTTPException(status_code=400, detail="Relatório não suportado")
         report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", input_data)
         if isinstance(report_output, str):
-            return HTMLResponse(report_output)
+            report_text = report_output
+
+    if report_text:
+        import re
+        from app.gemini_service import generate_interpretation
+        
+        table_match = re.search(r"<table.*?>.*?</table>", report_text, re.DOTALL | re.IGNORECASE)
+        table_html = table_match.group(0) if table_match else ""
+        
+        observations = input_data.get("observacoes_sobre_o_teste", "")
+        interpretation = await generate_interpretation(report_name, observations, table_html, patient.get("birth_date"))
+        
+        ai_html = (
+            '<div style="margin-top:20px;">'
+            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Interpretação Clínico-Pedagógica (IA)</h3>'
+            f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{interpretation}</div>'
+            '</div>'
+        )
+        if report_text.endswith("</div>\n"):
+            report_text = report_text[:-7] + ai_html + "</div>\n"
+        elif report_text.endswith("</div>"):
+            report_text = report_text[:-6] + ai_html + "</div>"
+        else:
+            report_text += ai_html
+            
+        return HTMLResponse(report_text)
 
     return {"ok": True, "report_name": report_name, "patient_id": patient_id}
 
@@ -458,3 +485,46 @@ def get_profiles(request: Request):
     if getattr(response, "error", None):
         raise HTTPException(status_code=500, detail=str(response.error))
     return getattr(response, "data", [])
+
+
+@app.get("/chat-gemini")
+async def chat_gemini_page(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse(request, "chat_gemini.html", {"request": request, "user": user, "user_display_name": build_display_name(user), "current_path": request.url.path})
+
+
+@app.post("/api/chat-gemini")
+async def api_chat_gemini(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
+    payload = await request.json()
+    contents = payload.get("contents")
+    if not contents:
+        raise HTTPException(status_code=400, detail="Histórico de mensagens é obrigatório")
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY não configurada no servidor")
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(url, json={"contents": contents}, timeout=60.0)
+            response.raise_for_status()
+            data = response.json()
+            text = data['candidates'][0]['content']['parts'][0]['text']
+            return {"text": text}
+        except httpx.HTTPStatusError as e:
+            try:
+                err_detail = e.response.json()
+            except Exception:
+                err_detail = e.response.text
+            raise HTTPException(status_code=e.response.status_code, detail=f"Erro na API do Gemini: {err_detail}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))

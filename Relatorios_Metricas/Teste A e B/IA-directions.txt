@@ -1,0 +1,206 @@
+CONTEXTO PARA ANÁLISE DO TESTE DE TRILHAS – PARTES A E B
+====================================================================
+
+FINALIDADE DESTE ARQUIVO
+--------------------------------------------------------------------
+Este documento não contém os resultados de nenhum paciente. Ele serve
+apenas como material de referência para que um modelo de linguagem
+(LLM) compreenda o que é o Teste de Trilhas (Partes A e B), o que cada
+parte avalia e o que cada categoria de classificação significa. Os
+resultados reais do paciente (tempos de execução, idade e
+classificações já calculadas) serão fornecidos em outro arquivo/
+mensagem, separadamente.
+
+O QUE É O TESTE DE TRILHAS
+--------------------------------------------------------------------
+O Teste de Trilhas (Montiel & Seabra, 2012) faz parte da mesma coleção
+de avaliação neuropsicológica cognitiva do TAC 2 (Avaliação
+Neuropsicológica Cognitiva: Atenção e Funções Executivas), sendo
+indicado para crianças e adolescentes de 6 a 14 anos. Diferente do TAC
+(baseado em acertos), o Teste de Trilhas mede o desempenho pelo TEMPO
+(em segundos) que o paciente leva para concluir cada parte, sendo
+aplicado em papel: o paciente deve ligar, com uma linha contínua e o
+mais rápido possível, uma sequência de estímulos numerados ou
+alfabéticos.
+
+O teste avalia principalmente:
+- Atenção concentrada e velocidade de processamento (Parte A).
+- Flexibilidade cognitiva, atenção alternada e memória de trabalho
+  (Parte B), já que o paciente precisa alternar entre dois critérios
+  diferentes (números e letras) mantendo ambas as sequências ativas
+  na mente ao mesmo tempo.
+- Coordenação visomotora, presente nas duas partes.
+
+ESTRUTURA DO TESTE: PARTES A E B
+--------------------------------------------------------------------
+- Parte A: o paciente liga números em ordem crescente (1-2-3-4...) o
+  mais rápido possível, dentro de um tempo limite. Mede atenção
+  concentrada, rastreio visual e velocidade de processamento "pura",
+  sem exigência de alternância.
+
+- Parte B: o paciente liga alternando números e letras em sequência
+  (1-A-2-B-3-C...), também contra o tempo. Além de tudo que a Parte A
+  exige, a Parte B acrescenta a necessidade de alternar o foco entre
+  dois critérios diferentes (ordem numérica e ordem alfabética) sem
+  se confundir, o que a torna sensível a dificuldades de flexibilidade
+  cognitiva e controle executivo.
+
+RESULTADO E TEMPO DE EXECUÇÃO
+--------------------------------------------------------------------
+O resultado bruto de cada parte é o tempo, em segundos, que o paciente
+leva para concluir a tarefa (quanto MENOR o tempo, melhor o
+desempenho — ao contrário do TAC, em que uma pontuação maior indica
+melhor desempenho). Erros cometidos durante a execução aumentam o
+tempo total considerado, pois o examinador solicita a correção do
+ponto do erro sem parar a cronometragem.
+
+Além do tempo de cada parte isoladamente, a diferença entre o tempo da
+Parte B e o tempo da Parte A (B menos A) é uma medida especialmente
+relevante: ela representa o "custo de alternância" — ou seja, quanto
+tempo adicional o paciente precisa apenas para lidar com a exigência
+de alternar critérios, isolando esse componente da velocidade de
+processamento básica já medida na Parte A.
+
+COMO AS CLASSIFICAÇÕES SÃO OBTIDAS
+--------------------------------------------------------------------
+Assim como no TAC 2, o tempo bruto de cada parte é convertido em um
+escore padronizado com base na idade do paciente, a partir das tabelas
+normativas do manual oficial do Teste de Trilhas. Essa conversão
+compara o tempo do paciente ao de outras pessoas da mesma faixa
+etária, gerando uma classificação em 5 categorias.
+
+ATENÇÃO: as classificações de cada parte (e, quando aplicável, do
+custo de alternância B-A) JÁ VÊM CALCULADAS no arquivo de resultado do
+paciente, com base nas tabelas normativas oficiais por idade. Este
+documento NÃO deve ser usado para recalcular ou reclassificar tempos
+brutos, pois as tabelas normativas completas não estão incluídas
+aqui. Use as classificações já fornecidas como ponto de partida da
+análise.
+
+SIGNIFICADO DE CADA CATEGORIA DE CLASSIFICAÇÃO
+--------------------------------------------------------------------
+Como a métrica é tempo (menor = melhor), as categorias devem ser lidas
+em relação à velocidade/eficiência do desempenho, e não à quantidade
+de acertos:
+
+- MUITO BAIXO: desempenho muito abaixo do esperado para a idade (ou
+  seja, tempo muito mais lento que o esperado). Sugere dificuldades
+  importantes na habilidade avaliada por aquela parte — atenção
+  concentrada e velocidade de processamento (Parte A) ou flexibilidade
+  cognitiva e atenção alternada (Parte B). Pode indicar necessidade de
+  investigação complementar, especialmente se o padrão se repetir em
+  outras medidas do próprio paciente.
+
+- BAIXO: desempenho abaixo do esperado para a idade (tempo mais lento
+  que o típico), mas não em nível extremo. Indica fragilidade relativa
+  que merece atenção, sem caracterizar isoladamente um quadro clínico.
+
+- MÉDIO: desempenho dentro da faixa esperada/típica para a idade
+  (tempo compatível com o esperado). Reflete funcionamento adequado na
+  habilidade avaliada por aquela parte.
+
+- ALTO: desempenho acima do esperado para a idade (tempo mais rápido
+  que o típico). Indica bom desempenho relativo, geralmente sem
+  significado clínico, exceto quando contrastado com outras medidas do
+  próprio paciente.
+
+- MUITO ALTO: desempenho muito acima do esperado para a idade (tempo
+  muito mais rápido que o típico), indicando excelente velocidade de
+  processamento e/ou flexibilidade cognitiva na habilidade avaliada.
+
+Observação: essas categorias devem sempre ser interpretadas em relação
+à idade do paciente — o mesmo tempo bruto pode gerar classificações
+diferentes dependendo da faixa etária, pois a velocidade de
+processamento esperada muda com o desenvolvimento cognitivo.
+
+COMO INTERPRETAR O CONJUNTO DOS RESULTADOS (ORIENTAÇÃO PARA O RELATÓRIO)
+--------------------------------------------------------------------
+Ao gerar o relatório com base nos resultados do paciente, considere:
+
+1. Descrever o desempenho na Parte A e na Parte B separadamente,
+   relacionando a classificação obtida com a habilidade específica que
+   cada parte avalia (Parte A: atenção concentrada/velocidade básica;
+   Parte B: flexibilidade cognitiva e atenção alternada).
+
+2. Comentar a relação entre as duas partes: se a Parte B apresenta
+   classificação bem inferior à Parte A, isso sugere que a maior
+   dificuldade do paciente está especificamente na alternância entre
+   critérios (flexibilidade cognitiva), e não na velocidade de
+   processamento básica, que pode estar preservada. Já um desempenho
+   proporcionalmente parecido entre as duas partes sugere que a
+   dificuldade (ou facilidade), quando presente, é mais generalizada.
+
+3. Observar e comentar padrões relevantes, como por exemplo:
+   - Parte A dentro da média, mas Parte B baixa: indício de
+     dificuldade específica em flexibilidade cognitiva/controle
+     executivo.
+   - Ambas as partes baixas: sugere dificuldade mais ampla, possivelmente
+     envolvendo velocidade de processamento geral, além da alternância.
+   - Ambas as partes altas: sugere boa velocidade de processamento e
+     boa capacidade de adaptação a demandas crescentes de flexibilidade.
+
+4. Evitar afirmações diagnósticas fechadas. As classificações do Teste
+   de Trilhas indicam padrões de desempenho dentro de um teste
+   específico e devem ser interpretadas dentro de um contexto clínico
+   mais amplo (histórico do paciente, outros testes como o TAC 2,
+   entrevista clínica), não como diagnóstico isolado.
+
+5. Usar linguagem técnica, porém clara, adequada a um relatório
+   psicológico/neuropsicológico profissional.
+
+PERSONALIZAÇÃO DO RELATÓRIO CONFORME A FAIXA ETÁRIA (6 A 14 ANOS)
+--------------------------------------------------------------------
+O Teste de Trilhas, na versão infantil, é normatizado para a faixa de
+6 a 14 anos. Dentro dela, a velocidade de processamento e a
+flexibilidade cognitiva amadurecem de forma progressiva, à medida que
+o sistema nervoso central (especialmente regiões frontais) se
+desenvolve. Use estas referências para contextualizar (não para
+reclassificar) o resultado:
+
+- 6 a 7 anos (educação infantil / alfabetização inicial): fase inicial
+  de desenvolvimento da atenção concentrada e da coordenação
+  visomotora necessárias para a tarefa. Tempos mais altos em termos
+  absolutos já são esperados e considerados na tabela normativa. A
+  Parte B pode ser especialmente desafiadora nessa idade, pois a
+  habilidade de alternar critérios ainda está em formação; avalie com
+  cautela redobrada antes de sugerir qualquer alteração clínica.
+
+- 8 a 11 anos (ensino fundamental, anos iniciais/intermediários):
+  período de ganho mais evidente em velocidade de processamento e
+  também de amadurecimento progressivo da flexibilidade cognitiva.
+  Classificações Baixo/Muito Baixo na Parte B nessa faixa merecem
+  atenção redobrada no relatório, especialmente se associadas a
+  relatos escolares de dificuldade em alternar entre atividades ou
+  seguir instruções com mais de um critério.
+
+- 12 a 14 anos (final do ensino fundamental / início da adolescência):
+  a flexibilidade cognitiva e o controle executivo tendem a estar mais
+  consolidados, com desempenho na Parte B mais próximo, proporcio-
+  nalmente, ao da Parte A. Um desempenho "Médio" aqui já reflete um
+  sistema executivo relativamente mais maduro que o de uma criança de
+  7 anos com a mesma classificação.
+
+De forma geral, para toda a faixa de 6 a 14 anos, ao redigir o
+relatório:
+- Relacione o desempenho a exigências do cotidiano escolar (copiar da
+  lousa em tempo hábil, alternar entre disciplinas/atividades, seguir
+  instruções com múltiplos passos).
+- Evite comparar a criança com padrões de adultos; use sempre a
+  própria classificação já ajustada por idade como referência.
+- Em classificações Baixo ou Muito Baixo (principalmente na Parte B),
+  sugira, quando pertinente, investigação complementar (outros testes
+  de funções executivas, relato de pais/professores, avaliação
+  multiprofissional), sem fechar diagnóstico apenas com base neste
+  teste.
+
+INSTRUÇÃO FINAL PARA O MODELO
+--------------------------------------------------------------------
+Ao gerar o relatório, identifique a subfaixa etária do paciente dentro
+do intervalo de 6 a 14 anos (6-7, 8-11 ou 12-14) e use essas
+referências apenas para ENRIQUECER a redação e dar contexto de
+desenvolvimento ao desempenho já classificado — nunca para alterar,
+recalcular ou "corrigir" a classificação (Muito Baixo, Baixo, Médio,
+Alto, Muito Alto) fornecida junto com o resultado do paciente.
+
+FIM DO ARQUIVO DE CONTEXTO
+====================================================================

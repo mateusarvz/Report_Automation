@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Gemini - Report Psicologia</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 120px);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .chat-history {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #fafbfe;
+        }
+
+        .chat-message {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            background: var(--primary-strong);
+            color: #ffffff;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-message.model {
+            align-self: flex-start;
+            background: var(--accent-soft);
+            color: var(--text);
+            border-bottom-left-radius: 2px;
+            border: 1px solid var(--border);
+        }
+
+        .chat-message.system {
+            align-self: center;
+            background: transparent;
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            background: var(--surface);
+            gap: 12px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.95rem;
+            background: var(--input-bg);
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-strong);
+        }
+
+        .chat-send-btn {
+            background: var(--primary-strong);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .chat-send-btn:hover {
+            background: #4a77b2;
+        }
+
+        .chat-send-btn:disabled {
+            background: var(--muted);
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            height: 20px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--muted);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div>
+                <div class="brand-row">
+                    <img class="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="Logo CogniReports" />
+                    <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
+                </div>
+                <nav>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
+                    <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
+                    <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
+                    <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
+                    <a href="/chat-gemini" class="{{ 'active' if current_path == '/chat-gemini' else '' }}">CHAT GEMINI</a>
+                </nav>
+            </div>
+        </aside>
+        <main class="content">
+            <div class="topbar">
+                <section class="page-header">
+                    <img class="page-icon-image" src="/static/assets/icons/usuario_user.png" alt="Ícone de Chat" />
+                    <div>
+                        <h1>Chat Gemini</h1>
+                    </div>
+                </section>
+                <div class="user-menu" id="user-menu">
+                    <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <div class="user-menu-text">
+                            <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
+                            {% set subtitle = '' %}
+                            {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Psicólogo' %}
+                            {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Psicóloga' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'Neuropsicólogo' %}
+                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% endif %}
+                            {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
+                        </div>
+                        <span class="user-menu-caret">▾</span>
+                    </button>
+                    <div class="user-menu-dropdown" id="user-menu-dropdown">
+                        <a href="/logout">Sair</a>
+                    </div>
+                </div>
+            </div>
+
+            <section class="section">
+                <div class="chat-container">
+                    <div class="chat-history" id="chat-history">
+                        <div class="chat-message model">
+                            Olá! Como posso ajudar você hoje com seus relatórios ou dúvidas?
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" class="chat-input" placeholder="Digite sua mensagem aqui..." autofocus autocomplete="off" />
+                        <button id="chat-send-btn" class="chat-send-btn">Enviar</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const historyContainer = document.getElementById('chat-history');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('chat-send-btn');
+
+        // Initial format: Gemini API expects roles: 'user' or 'model'
+        const conversationHistory = [
+            {
+                role: 'model',
+                parts: [{ text: 'Olá! Como posso ajudar você hoje com seus relatórios ou dúvidas?' }]
+            }
+        ];
+
+        function formatMarkdown(text) {
+            // Very simple replacement of **bold** and \n to br
+            let formatted = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+            return formatted;
+        }
+
+        function appendMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `chat-message ${role}`;
+            if (role === 'system') {
+                msgDiv.textContent = text;
+            } else {
+                msgDiv.innerHTML = formatMarkdown(text);
+            }
+            historyContainer.appendChild(msgDiv);
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+            return msgDiv;
+        }
+
+        async function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            chatInput.value = '';
+            chatInput.disabled = true;
+            sendBtn.disabled = true;
+
+            appendMessage('user', text);
+            conversationHistory.push({
+                role: 'user',
+                parts: [{ text: text }]
+            });
+
+            // Show typing indicator
+            const indicatorDiv = appendMessage('model', '');
+            indicatorDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/chat-gemini', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ contents: conversationHistory })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || 'Erro na resposta do servidor.');
+                }
+
+                const data = await response.json();
+                
+                // Remove indicator and set response
+                indicatorDiv.innerHTML = formatMarkdown(data.text);
+                
+                conversationHistory.push({
+                    role: 'model',
+                    parts: [{ text: data.text }]
+                });
+            } catch (error) {
+                indicatorDiv.className = 'chat-message system';
+                indicatorDiv.textContent = `Erro: ${error.message}`;
+            } finally {
+                chatInput.disabled = false;
+                sendBtn.disabled = false;
+                chatInput.focus();
+                historyContainer.scrollTop = historyContainer.scrollHeight;
+            }
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // User dropdown menu
+        const userMenu = document.getElementById('user-menu');
+        const userMenuToggle = document.getElementById('user-menu-toggle');
+        if (userMenu && userMenuToggle) {
+            userMenuToggle.addEventListener('click', (event) => {
+                event.stopPropagation();
+                userMenu.classList.toggle('open');
+                userMenuToggle.setAttribute('aria-expanded', String(userMenu.classList.contains('open')));
+            });
+
+            document.addEventListener('click', () => {
+                userMenu.classList.remove('open');
+                userMenuToggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+    </script>
+</body>
+</html>

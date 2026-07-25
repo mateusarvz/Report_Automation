@@ -43,9 +43,9 @@ def get_report_input_fields(report_name: str):
         if not any(field.get('name') == 'observacoes_sobre_o_teste' for field in fields):
             fields.append({
                 'name': 'observacoes_sobre_o_teste',
-                'label': 'Observações sobre o Teste',
+                'label': 'Instruções para a IA',
                 'type': 'textarea',
-                'placeholder': 'Digite observações que serão adicionadas ao relatório',
+                'placeholder': 'Digite intruções, observações ou qualquer informação relevante sobre o teste em questão',
                 'required': False,
             })
         return fields

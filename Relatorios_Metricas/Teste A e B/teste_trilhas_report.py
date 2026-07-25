@@ -116,7 +116,7 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
     if note_text:
         note_html = (
             '<div style="margin-top:20px;">'
-            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Observações sobre o Teste</h3>'
+            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Instruções para a IA</h3>'
             f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{_escape_html(note_text)}</div>'
             '</div>'
         )
@@ -149,7 +149,6 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
         "</p>"
         f"{age_html}"
         f"{_html_table({'parte_a_score': f'{score_a:.0f}' if pd.notna(score_a) else 'N/A', 'parte_a_categoria': classify_score_metric(score_a) or 'N/A', 'parte_b_score': f'{score_b:.0f}' if pd.notna(score_b) else 'N/A', 'parte_b_categoria': classify_score_metric(score_b) or 'N/A', 'parte_ba_score': f'{score_ba:.0f}' if pd.notna(score_ba) else 'N/A', 'parte_ba_categoria': classify_score_metric(score_ba) or 'N/A'})}"
-        f"{note_html}"
         "</div>\n"
     )
     return html

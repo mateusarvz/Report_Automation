@@ -90,7 +90,7 @@ def build_tac2_text_report(
     if note_text:
         note_html = (
             '<div style="margin-top:20px;">'
-            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Observações sobre o Teste</h3>'
+            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Instruções para a IA</h3>'
             f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{_escape_html(note_text)}</div>'
             '</div>'
         )
@@ -147,5 +147,6 @@ def build_tac2_text_report(
     return (
         "<div style=\"font-family: Arial, Helvetica, sans-serif; color: #111827;\">"
         f"{description}"
-        f"{table}"        f"{note_html}"        "</div>\n"
+        f"{table}"
+        "</div>\n"
     )
