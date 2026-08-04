@@ -71,16 +71,17 @@
                     <select id="report-patient">
                         <option>Carregando pacientes...</option>
                     </select>
-                    <label for="report-type">Tipo de relatório</label>
-                    <select id="report-type">
-                        <option>Carregando tipos...</option>
-                    </select>
-                    <div>
-                        <button class="button" id="generate-btn" disabled>Carregar Relatório</button>
+                    <label>Tipo de relatório</label>
+                    <div id="report-type-container" class="report-type-options">
+                        <div>Carregando tipos...</div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="button" id="generate-btn" disabled>Carregar relatórios</button>
                     </div>
                 </div>
             </section>
             <div id="report-input-container"></div>
+            <div id="report-actions-container"></div>
             <div id="report-results-container"></div>
         </main>
     </div>
@@ -123,36 +124,47 @@
         }
 
         async function loadReportTypes() {
-            const select = document.getElementById('report-type');
+            const container = document.getElementById('report-type-container');
             try {
                 const res = await fetch('/api/report-types');
                 if (!res.ok) throw new Error('failed');
                 const types = await res.json();
-                select.innerHTML = '';
+                container.innerHTML = '';
                 if (!Array.isArray(types) || types.length === 0) {
-                    select.disabled = true;
-                    select.innerHTML = '<option>Nenhum relatório disponível</option>';
+                    container.innerHTML = '<div>Nenhum relatório disponível</div>';
                     return;
                 }
                 types.forEach(type => {
-                    const opt = document.createElement('option');
-                    opt.value = type;
-                    opt.textContent = type;
-                    select.appendChild(opt);
+                    const optionWrapper = document.createElement('label');
+                    optionWrapper.className = 'report-type-option';
+                    optionWrapper.htmlFor = `report-type-${type}`;
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `report-type-${type}`;
+                    checkbox.name = 'report_type';
+                    checkbox.value = type;
+                    checkbox.addEventListener('change', updateGenerateButtonState);
+
+                    const title = document.createElement('span');
+                    title.textContent = type;
+
+                    optionWrapper.appendChild(checkbox);
+                    optionWrapper.appendChild(title);
+                    container.appendChild(optionWrapper);
                 });
-                select.disabled = false;
-                updateGenerateButtonState();
             } catch (e) {
-                select.innerHTML = '<option>Erro ao carregar</option>';
-                select.disabled = true;
+                container.innerHTML = '<div>Erro ao carregar</div>';
                 console.error(e);
             }
         }
 
         function clearReportContainers() {
             const inputContainer = document.getElementById('report-input-container');
+            const actionsContainer = document.getElementById('report-actions-container');
             const resultsContainer = document.getElementById('report-results-container');
             if (inputContainer) inputContainer.innerHTML = '';
+            if (actionsContainer) actionsContainer.innerHTML = '';
             if (resultsContainer) resultsContainer.innerHTML = '';
             const existingError = document.getElementById('age-error-msg');
             if (existingError) existingError.remove();
@@ -254,16 +266,19 @@
                         .page {
                             max-width: 210mm;
                             min-height: 297mm;
-                            margin: 0 auto;
+                            margin: 0 auto 24px;
                             background: #fff;
                             box-sizing: border-box;
                             padding: 22mm 18mm;
                             box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
                         }
+                        .page + .page {
+                            page-break-before: always;
+                        }
                     </style>
                 </head>
                 <body>
-                    <div class="page">${reportHtml}</div>
+                    ${reportHtml}
                 </body>
                 </html>
             `;
@@ -297,91 +312,233 @@
             container.appendChild(panel);
         }
 
-        async function loadReportFields(reportName) {
+        function renderCombinedHtmlReport(reportHtml) {
+            const container = document.getElementById('report-results-container');
+            container.innerHTML = '';
+            const panel = document.createElement('section');
+            panel.className = 'section';
+            panel.style.marginTop = '16px';
+
+            const card = document.createElement('div');
+            card.className = 'form-card';
+
+            const heading = document.createElement('h2');
+            heading.textContent = 'Previa dos relatórios';
+            card.appendChild(heading);
+
+            const iframe = document.createElement('iframe');
+            iframe.title = 'Previa dos relatórios';
+            iframe.style.width = '100%';
+            iframe.style.minHeight = '900px';
+            iframe.style.border = '1px solid #cbd5e1';
+            iframe.style.borderRadius = '12px';
+            iframe.style.background = '#fff';
+            iframe.srcdoc = buildPrintPreviewShell(reportHtml);
+            card.appendChild(iframe);
+
+            panel.appendChild(card);
+            container.appendChild(panel);
+        }
+
+        function sanitizeReportKey(reportName) {
+            return reportName.replace(/[^a-zA-Z0-9]/g, '_');
+        }
+
+        function getSelectedReportNames() {
+            return Array.from(document.querySelectorAll('input[name="report_type"]:checked')).map(input => input.value);
+        }
+
+        async function loadReportFieldsForReports(reportNames) {
             const fieldsContainer = document.getElementById('report-input-container');
+            const actionsContainer = document.getElementById('report-actions-container');
             fieldsContainer.innerHTML = '';
-            clearReportContainers();
-            if (!reportName) {
+            actionsContainer.innerHTML = '';
+            document.getElementById('report-results-container').innerHTML = '';
+            if (!Array.isArray(reportNames) || reportNames.length === 0) {
                 return;
             }
+
             reportSubmitAttempted = false;
 
-            try {
-                const res = await fetch(`/api/report-fields?report_name=${encodeURIComponent(reportName)}`);
-                if (!res.ok) throw new Error('failed');
-                const fields = await res.json();
-                if (!Array.isArray(fields) || fields.length === 0) {
-                    return;
-                }
-
-                const panel = document.createElement('section');
-                panel.className = 'section';
-                panel.style.marginTop = '16px';
-
-                const card = document.createElement('div');
-                card.className = 'form-card';
-
-                const heading = document.createElement('h2');
-                heading.textContent = reportName;
-                card.appendChild(heading);
-
-                fields.forEach(field => {
-                    const fieldWrapper = document.createElement('div');
-                    fieldWrapper.className = 'form-row';
-
-                    const label = document.createElement('label');
-                    label.htmlFor = field.name;
-                    label.textContent = field.label;
-                    fieldWrapper.appendChild(label);
-
-                    let input;
-                    if (field.type === 'textarea') {
-                        input = document.createElement('textarea');
-                        input.rows = field.rows || 4;
-                    } else {
-                        input = document.createElement('input');
-                        input.type = field.type || 'text';
-                        if (field.min !== undefined) input.min = field.min;
-                        if (field.max !== undefined) input.max = field.max;
+            for (const reportName of reportNames) {
+                try {
+                    const res = await fetch(`/api/report-fields?report_name=${encodeURIComponent(reportName)}`);
+                    if (!res.ok) throw new Error('failed');
+                    const fields = await res.json();
+                    if (!Array.isArray(fields) || fields.length === 0) {
+                        continue;
                     }
 
-                    input.id = field.name;
-                    input.name = field.name;
-                    input.placeholder = field.placeholder || '';
-                    if (field.required) input.required = true;
-                    input.addEventListener('input', () => {
-                        if (reportSubmitAttempted) validateReportInputs(reportName);
+                    const reportKey = sanitizeReportKey(reportName);
+                    const panel = document.createElement('section');
+                    panel.className = 'section';
+                    panel.style.marginTop = '16px';
+                    panel.dataset.reportName = reportName;
+
+                    const card = document.createElement('div');
+                    card.className = 'form-card';
+                    card.dataset.reportName = reportName;
+
+                    const heading = document.createElement('h2');
+                    heading.textContent = reportName;
+                    card.appendChild(heading);
+
+                    fields.forEach(field => {
+                        const fieldWrapper = document.createElement('div');
+                        fieldWrapper.className = 'form-row';
+
+                        const label = document.createElement('label');
+                        label.htmlFor = `${reportKey}_${field.name}`;
+                        label.textContent = field.label;
+                        fieldWrapper.appendChild(label);
+
+                        let input;
+                        if (field.type === 'textarea') {
+                            input = document.createElement('textarea');
+                            input.rows = field.rows || 4;
+                        } else {
+                            input = document.createElement('input');
+                            input.type = field.type || 'text';
+                            if (field.min !== undefined) input.min = field.min;
+                            if (field.max !== undefined) input.max = field.max;
+                        }
+
+                        input.id = `${reportKey}_${field.name}`;
+                        input.name = field.name;
+                        input.dataset.reportName = reportName;
+                        input.dataset.fieldName = field.name;
+                        input.placeholder = field.placeholder || '';
+                        input.required = !!field.required;
+                        input.addEventListener('input', () => {
+                            if (reportSubmitAttempted) validateReportInputs(reportName, card);
+                        });
+                        input.addEventListener('change', () => {
+                            if (reportSubmitAttempted) validateReportInputs(reportName, card);
+                        });
+                        fieldWrapper.appendChild(input);
+
+                        card.appendChild(fieldWrapper);
                     });
-                    input.addEventListener('change', () => {
-                        if (reportSubmitAttempted) validateReportInputs(reportName);
+
+                    panel.appendChild(card);
+                    fieldsContainer.appendChild(panel);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            const actionButton = document.createElement('button');
+            actionButton.className = 'button';
+            actionButton.type = 'button';
+            actionButton.id = 'generate-pdf-btn';
+            actionButton.textContent = 'Gerar relatório';
+            actionButton.addEventListener('click', async () => {
+                await submitCombinedReports();
+            });
+            actionsContainer.appendChild(actionButton);
+        }
+
+        function validateReportInputs(reportName, cardElement) {
+            const rules = getReportInputRules(reportName);
+            if (!rules) return true;
+
+            let valid = true;
+            reportSubmitAttempted = true;
+
+            Object.entries(rules).forEach(([fieldName, range]) => {
+                const input = cardElement.querySelector(`input[data-field-name="${fieldName}"], textarea[data-field-name="${fieldName}"]`);
+                const fieldWrapper = input ? input.closest('.form-row') : null;
+                const hasValue = input && input.value !== '';
+                const fieldValid = input && isWithinRange(input.value, range.min, range.max);
+                if (hasValue && !fieldValid && fieldWrapper) {
+                    setFieldError(fieldWrapper);
+                    valid = false;
+                } else if (fieldWrapper) {
+                    clearFieldError(fieldWrapper);
+                }
+            });
+
+            return valid;
+        }
+
+        async function submitCombinedReports() {
+            const patientId = document.getElementById('report-patient').value;
+            const reportPanels = Array.from(document.querySelectorAll('#report-input-container .form-card'));
+            if (!reportPanels.length) return;
+
+            let allValid = true;
+            const reportSections = [];
+
+            for (const card of reportPanels) {
+                const reportName = card.dataset.reportName;
+                const valid = validateReportInputs(reportName, card);
+                if (!valid) allValid = false;
+                const inputs = {};
+                card.querySelectorAll('input[data-field-name], textarea[data-field-name]').forEach(inp => {
+                    const fieldName = inp.dataset.fieldName;
+                    if (!fieldName) return;
+                    if (inp.type === 'number') {
+                        inputs[fieldName] = inp.value === '' ? null : Number(inp.value);
+                    } else {
+                        inputs[fieldName] = inp.value;
+                    }
+                });
+                reportSections.push({ report_name: reportName, input_data: inputs });
+            }
+
+            if (!allValid) {
+                const errorBanner = document.getElementById('validation-error-banner') || document.createElement('div');
+                errorBanner.id = 'validation-error-banner';
+                errorBanner.style.color = '#dc2626';
+                errorBanner.style.marginTop = '12px';
+                errorBanner.style.fontSize = '14px';
+                errorBanner.style.fontWeight = 'bold';
+                errorBanner.textContent = 'Corrija os campos destacados antes de gerar o relatório.';
+                const selectionCard = document.getElementById('report-selection-card');
+                if (!selectionCard.contains(errorBanner)) {
+                    selectionCard.appendChild(errorBanner);
+                }
+                return;
+            }
+
+            const button = document.getElementById('generate-pdf-btn');
+            button.disabled = true;
+            button.textContent = 'Gerando relatório...';
+            try {
+                const reportHtmls = [];
+                for (const entry of reportSections) {
+                    const res = await fetch('/api/reports', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ patient_id: patientId, report_name: entry.report_name, input_data: entry.input_data }),
                     });
-                    fieldWrapper.appendChild(input);
+                    if (!res.ok) {
+                        const errorText = (await res.text()) || 'Erro ao gerar relatório';
+                        throw new Error(errorText);
+                    }
+                    reportHtmls.push(await res.text());
+                }
 
-                    card.appendChild(fieldWrapper);
-                });
-
-                const actionButton = document.createElement('button');
-                actionButton.className = 'button';
-                actionButton.type = 'button';
-                actionButton.id = 'submit-report-btn';
-                actionButton.textContent = 'Gerar relatório';
-                actionButton.addEventListener('click', async () => {
-                    await submitReport();
-                });
-                card.appendChild(actionButton);
-
-                panel.appendChild(card);
-                fieldsContainer.appendChild(panel);
-            } catch (e) {
-                console.error(e);
+                const combinedHtml = reportHtmls.map(html => `<div class="page">${html}</div>`).join('');
+                if (reportHtmls.length === 1) {
+                    renderHtmlReport(combinedHtml);
+                } else {
+                    renderCombinedHtmlReport(combinedHtml);
+                }
+            } catch (error) {
+                alert(error.message || 'Erro ao gerar relatório');
+                console.error(error);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Gerar relatório';
             }
         }
 
         function updateGenerateButtonState() {
             const patientSelect = document.getElementById('report-patient');
-            const reportSelect = document.getElementById('report-type');
+            const selectedReports = getSelectedReportNames();
             const button = document.getElementById('generate-btn');
-            button.disabled = !patientSelect.value || !reportSelect.value;
+            button.disabled = !patientSelect.value || selectedReports.length === 0;
         }
 
         document.getElementById('report-patient').addEventListener('change', () => {
@@ -389,39 +546,38 @@
             const existingError = document.getElementById('age-error-msg');
             if (existingError) existingError.remove();
         });
-        document.getElementById('report-type').addEventListener('change', () => {
-            updateGenerateButtonState();
-            const existingError = document.getElementById('age-error-msg');
-            if (existingError) existingError.remove();
-        });
 
         document.getElementById('generate-btn').addEventListener('click', async () => {
             const patientId = document.getElementById('report-patient').value;
-            const reportName = document.getElementById('report-type').value;
-
+            const selectedReports = getSelectedReportNames();
             const existingError = document.getElementById('age-error-msg');
             if (existingError) existingError.remove();
 
+            if (!selectedReports.length) return;
             const patient = patientsList.find(p => String(p.id) === String(patientId));
-            const minAge = reportMinAges[reportName];
-
-            if (patient && minAge !== undefined) {
-                const age = patient.age !== "" && patient.age !== null && patient.age !== undefined ? Number(patient.age) : NaN;
-                if (Number.isNaN(age) || age < minAge) {
-                    clearReportContainers();
-                    const errorMsg = document.createElement('div');
-                    errorMsg.id = 'age-error-msg';
-                    errorMsg.style.color = '#dc2626';
-                    errorMsg.style.marginTop = '12px';
-                    errorMsg.style.fontSize = '14px';
-                    errorMsg.style.fontWeight = 'bold';
-                    errorMsg.textContent = `Paciente não possui a idade mínima necessaria para este relatório (Idade mínima: ${minAge} anos).`;
-                    document.getElementById('report-selection-card').appendChild(errorMsg);
-                    return;
+            const invalidReport = selectedReports.find(reportName => {
+                const minAge = reportMinAges[reportName];
+                if (patient && minAge !== undefined) {
+                    const age = patient.age !== "" && patient.age !== null && patient.age !== undefined ? Number(patient.age) : NaN;
+                    return Number.isNaN(age) || age < minAge;
                 }
+                return false;
+            });
+
+            if (invalidReport) {
+                clearReportContainers();
+                const errorMsg = document.createElement('div');
+                errorMsg.id = 'age-error-msg';
+                errorMsg.style.color = '#dc2626';
+                errorMsg.style.marginTop = '12px';
+                errorMsg.style.fontSize = '14px';
+                errorMsg.style.fontWeight = 'bold';
+                errorMsg.textContent = `Paciente não possui a idade mínima necessaria para este relatório (Idade mínima: ${reportMinAges[invalidReport]} anos).`;
+                document.getElementById('report-selection-card').appendChild(errorMsg);
+                return;
             }
 
-            await loadReportFields(reportName);
+            await loadReportFieldsForReports(selectedReports);
         });
 
         async function submitReport() {

@@ -1,10 +1,15 @@
+import io
 import os
-import httpx
+import re
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+import httpx
+from fpdf import FPDF
+from fpdf import html as fpdf_html
 from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -229,15 +234,12 @@ async def create_report(request: Request):
             report_text = report_output
 
     if report_text:
-        import re
         from app.gemini_service import generate_interpretation
-        
+
         table_match = re.search(r"<table.*?>.*?</table>", report_text, re.DOTALL | re.IGNORECASE)
         table_html = table_match.group(0) if table_match else ""
-        
         observations = input_data.get("observacoes_sobre_o_teste", "")
         interpretation = await generate_interpretation(report_name, observations, table_html, patient.get("birth_date"))
-        
         ai_html = (
             '<div style="margin-top:20px;">'
             '<h3 style="margin:0 0 8px 0; font-size:13pt;">Interpretação Clínico-Pedagógica (IA)</h3>'
@@ -250,10 +252,114 @@ async def create_report(request: Request):
             report_text = report_text[:-6] + ai_html + "</div>"
         else:
             report_text += ai_html
-            
+
         return HTMLResponse(report_text)
 
     return {"ok": True, "report_name": report_name, "patient_id": patient_id}
+
+
+class PDF(FPDF, fpdf_html.HTMLMixin):
+    pass
+
+
+async def build_report_html(client, patient, report_name: str, input_data: dict) -> str:
+    report_text = ""
+    if report_name == "TAC 2":
+        report_text = build_tac2_text_report(
+            client,
+            patient["id"],
+            patient.get("full_name") or "Paciente",
+            input_data,
+        )
+    else:
+        report_module = None
+        try:
+            from app.report_store import load_report_module
+            report_module = load_report_module(report_name)
+        except Exception:
+            report_module = None
+
+        if not report_module or not hasattr(report_module, 'build_report'):
+            raise HTTPException(status_code=400, detail="Relatório não suportado")
+        report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", input_data)
+        if isinstance(report_output, str):
+            report_text = report_output
+
+    if not report_text:
+        raise HTTPException(status_code=400, detail="Relatório vazio")
+
+    from app.gemini_service import generate_interpretation
+    table_match = re.search(r"<table.*?>.*?</table>", report_text, re.DOTALL | re.IGNORECASE)
+    table_html = table_match.group(0) if table_match else ""
+    observations = input_data.get("observacoes_sobre_o_teste", "")
+    interpretation = await generate_interpretation(report_name, observations, table_html, patient.get("birth_date"))
+    ai_html = (
+        '<div style="margin-top:20px;">'
+        '<h3 style="margin:0 0 8px 0; font-size:13pt;">Interpretação Clínico-Pedagógica (IA)</h3>'
+        f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{interpretation}</div>'
+        '</div>'
+    )
+    if report_text.endswith("</div>\n"):
+        report_text = report_text[:-7] + ai_html + "</div>\n"
+    elif report_text.endswith("</div>"):
+        report_text = report_text[:-6] + ai_html + "</div>"
+    else:
+        report_text += ai_html
+
+    return report_text
+
+
+def build_combined_pdf(report_sections: list[str]) -> bytes:
+    pdf = PDF(format='A4')
+    pdf.set_auto_page_break(auto=True, margin=15)
+    for section_html in report_sections:
+        pdf.add_page()
+        pdf.set_font('Arial', size=11)
+        try:
+            pdf.write_html(section_html)
+        except Exception:
+            text_only = re.sub(r'<[^>]+>', '', section_html)
+            pdf.multi_cell(0, 8, text_only)
+    output = pdf.output(dest='S')
+    if isinstance(output, str):
+        output = output.encode('latin-1', 'replace')
+    return output
+
+
+@app.post('/api/reports/pdf')
+async def create_reports_pdf(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail='Não autenticado')
+
+    payload = await request.json()
+    patient_id = payload.get('patient_id')
+    report_entries = payload.get('report_entries') or []
+    if not patient_id or not isinstance(report_entries, list) or not report_entries:
+        raise HTTPException(status_code=400, detail='patient_id e report_entries são obrigatórios')
+
+    report_folders = get_report_folders()
+
+    client = get_authenticated_client(request)
+    patient_resp = client.table('patients').select('id, full_name, birth_date').eq('psychologist_id', user['id']).eq('id', patient_id).limit(1).execute()
+    if getattr(patient_resp, 'error', None):
+        raise HTTPException(status_code=500, detail=str(patient_resp.error))
+    raw_data = getattr(patient_resp, 'data', []) or []
+    if not raw_data:
+        raise HTTPException(status_code=404, detail='Paciente não encontrado')
+    patient = raw_data[0]
+
+    report_sections = []
+    for entry in report_entries:
+        report_name = entry.get('report_name')
+        input_data = entry.get('input_data') or {}
+        if not report_name or report_name not in report_folders:
+            raise HTTPException(status_code=400, detail=f"Relatório inválido: {report_name}")
+        report_html = await build_report_html(client, patient, report_name, input_data)
+        report_sections.append(report_html)
+
+    pdf_content = build_combined_pdf(report_sections)
+    return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'attachment; filename="relatorios_combinados.pdf"'})
 
 
 @app.get("/register-patient")

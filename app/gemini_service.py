@@ -41,7 +41,7 @@ async def generate_interpretation(report_name: str, observations: str, table_htm
     # 4. Manual / directions (IA-directions.txt)
     prompt = (
         "INSTRUÇÃO PRINCIPAL (CRÍTICA):\n"
-        "Atue como um profissional de neuropedagogia e escreva um texto de 100 a 200 palavras. Ultilize linguagem formal, profissional para a área de psicologia."
+        "Atue como um profissional de neuropedagogia e escreva um texto de 20 a 50 palavras. Ultilize linguagem formal, profissional para a área de psicologia."
         "Evite dar diagnosticos. Apenas faça uma analise com todas as informações que voce receber"
         "Atue sempre como se você estivesse escrevendo a sua interpretação dos resultados de um paciente em um teste.\n\n"
         
