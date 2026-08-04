@@ -425,6 +425,10 @@ button {
     display: none;
 }
 
+.brand-logo.clickable {
+    cursor: pointer;
+}
+
 .sidebar-collapsed .nav-text {
     display: none;
 }
@@ -433,6 +437,24 @@ button {
 .sidebar-collapsed .sidebar button {
     justify-content: center;
     padding: 10px;
+}
+
+/* Keep the collapse toggle clearly visible when the sidebar is retracted */
+.sidebar-collapsed .sidebar button.sidebar-toggle {
+    margin-left: auto;
+    padding: 0;
+    width: 34px;
+    height: 34px;
+    background: var(--accent-soft);
+    border-color: rgba(93, 139, 201, 0.4);
+    color: var(--primary-strong);
+    box-shadow: 0 2px 10px rgba(93, 139, 201, 0.22);
+}
+
+.sidebar-collapsed .sidebar button.sidebar-toggle:hover {
+    background: var(--accent-soft);
+    color: var(--primary-strong);
+    border-color: rgba(93, 139, 201, 0.5);
 }
 
 .content {
@@ -719,6 +741,92 @@ thead th {
 
 .content .description-textarea {
     min-height: 80px;
+}
+
+/* Subtle delete button (Novo Paciente table) */
+.content .delete-patient-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.content .delete-patient-btn:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+/* Subtle confirmation modal (centered, highest layer, blurred backdrop) */
+.delete-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+.delete-modal {
+    width: min(420px, 100%);
+    padding: 22px 24px;
+    border: 1px solid #fecaca;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.delete-modal p {
+    margin: 0 0 18px;
+    font-size: 0.92rem;
+    color: #7f1d1d;
+    line-height: 1.5;
+}
+
+.delete-modal p strong {
+    color: #991b1b;
+}
+
+.delete-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.delete-confirm-actions .delete-cancel {
+    padding: 7px 14px;
+    font-size: 0.82rem;
+}
+
+.content .delete-confirm-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 14px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.content .delete-confirm-btn:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #991b1b;
 }
 
 .content .form-row label,

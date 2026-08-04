@@ -559,6 +559,16 @@ async def update_patient(patient_id: str, request: Request):
         return f"({aa}) {rest[:5]}-{rest[5:]}"
 
     birth_date = parse_birth_date(payload.get("birth_date") or None)
+    if payload.get("birth_date") and birth_date is None:
+        raise HTTPException(status_code=400, detail="Data de nascimento inválida. Use o formato dd/mm/aaaa.")
+    if birth_date:
+        from datetime import date, datetime
+        bd = datetime.fromisoformat(birth_date).date()
+        age = date.today().year - bd.year - ((date.today().month, date.today().day) < (bd.month, bd.day))
+        if age < 0:
+            raise HTTPException(status_code=400, detail="Data de nascimento não pode estar no futuro.")
+        if age > 120:
+            raise HTTPException(status_code=400, detail="A idade não pode ser maior que 120 anos.")
     phone = normalize_phone(payload.get("phone") or None)
     gender = payload.get("gender") or None
     allowed_genders = {"Masculino", "Feminino", "Outro"}
@@ -583,6 +593,27 @@ async def update_patient(patient_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Paciente não encontrado")
 
     return {"ok": True, "patient": updated_data[0]}
+
+
+@app.delete("/api/patients/{patient_id}")
+async def delete_patient(patient_id: str, request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
+    if not request.session.get("access_token"):
+        raise HTTPException(status_code=401, detail="Usuário não autenticado")
+
+    client = get_authenticated_client(request)
+    response = client.table("patients").delete().eq("id", patient_id).eq("psychologist_id", user["id"]).execute()
+    if getattr(response, "error", None):
+        raise HTTPException(status_code=500, detail=str(response.error))
+
+    deleted = getattr(response, "data", None) or []
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+
+    return {"ok": True, "deleted_id": patient_id}
 
 
 @app.post("/api/patients")
@@ -642,6 +673,16 @@ async def create_patient(request: Request):
             return f"({aa}) {rest[:5]}-{rest[5:]}"
 
     birth_date = parse_birth_date(payload.get("birth_date") or None)
+    if payload.get("birth_date") and birth_date is None:
+        raise HTTPException(status_code=400, detail="Data de nascimento inválida. Use o formato dd/mm/aaaa.")
+    if birth_date:
+        from datetime import date, datetime
+        bd = datetime.fromisoformat(birth_date).date()
+        age = date.today().year - bd.year - ((date.today().month, date.today().day) < (bd.month, bd.day))
+        if age < 0:
+            raise HTTPException(status_code=400, detail="Data de nascimento não pode estar no futuro.")
+        if age > 120:
+            raise HTTPException(status_code=400, detail="A idade não pode ser maior que 120 anos.")
     phone = normalize_phone(payload.get("phone") or None)
     gender = payload.get("gender") or None
     allowed_genders = {"Masculino", "Feminino", "Outro"}

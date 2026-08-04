@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom'
-import { apiGet, apiPatch, apiPost } from './api'
+import { apiGet, apiPatch, apiPost, apiDelete } from './api'
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.js'
 
 const reportRanges = {
@@ -25,6 +25,22 @@ const reportMinAges = {
   'TAC 2': 5,
   'Teste de Trilhas A e B': 6,
   'Torre de Londres': 11,
+}
+
+// Only digits, auto-format to dd/mm/yyyy
+function formatDateInput(value) {
+  const digits = String(value).replace(/\D/g, '').slice(0, 8)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+}
+
+// Only digits, auto-format to (00) 00000-0000
+function formatPhoneInput(value) {
+  const digits = String(value).replace(/\D/g, '').slice(0, 11)
+  if (digits.length <= 2) return digits
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
 function App() {
@@ -132,7 +148,12 @@ function ProtectedLayout({ user, onLogout }) {
     <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className="sidebar">
         <div className="brand-row">
-          <img className="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="CogniReports" />
+          <img
+            className={`brand-logo ${collapsed ? 'clickable' : ''}`}
+            src="/static/assets/logos/LOGO_TESTE.png"
+            alt="CogniReports"
+            onClick={() => collapsed && setCollapsed(false)}
+          />
           <div className="brand">
             <span className="brand-cogni">Cogni</span>
             <span className="brand-reports">Reports</span>
@@ -705,7 +726,7 @@ function PatientsPage() {
             <div className="grid-two">
               <div className="form-row">
                 <label>Data de nascimento</label>
-                <input value={editForm.birth_date || ''} onChange={(event) => handleChange('birth_date', event.target.value)} placeholder="dd/mm/aaaa" />
+                <input value={editForm.birth_date || ''} onChange={(event) => handleChange('birth_date', formatDateInput(event.target.value))} placeholder="dd/mm/aaaa" />
               </div>
               <div className="form-row">
                 <label>Gênero</label>
@@ -724,7 +745,7 @@ function PatientsPage() {
               </div>
               <div className="form-row">
                 <label>Telefone</label>
-                <input value={editForm.phone || ''} onChange={(event) => handleChange('phone', event.target.value)} />
+                <input value={editForm.phone || ''} onChange={(event) => handleChange('phone', formatPhoneInput(event.target.value))} placeholder="(00) 00000-0000" />
               </div>
             </div>
             <div className="form-row">
@@ -738,7 +759,7 @@ function PatientsPage() {
           </form>
         </div>
       )}
-      {message && <p className="message">{message}</p>}
+      {message && <p className={message.includes('sucesso') ? 'success' : 'message'}>{message}</p>}
     </div>
   )
 }
@@ -747,6 +768,7 @@ function RegisterPatientPage() {
   const [patients, setPatients] = useState([])
   const [form, setForm] = useState({ full_name: '', birth_date: '', gender: '', phone: '', email: '' })
   const [message, setMessage] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
     loadPatients()
@@ -756,6 +778,29 @@ function RegisterPatientPage() {
     apiGet('/api/patients')
       .then(setPatients)
       .catch((err) => setMessage(err.message))
+  }
+
+  const confirmDelete = (patient) => {
+    setMessage('')
+    setDeleteTarget(patient)
+  }
+
+  const cancelDelete = () => {
+    setDeleteTarget(null)
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setMessage('')
+    try {
+      await apiDelete(`/api/patients/${deleteTarget.id}`)
+      setMessage('Paciente excluído com sucesso.')
+      setDeleteTarget(null)
+      loadPatients()
+    } catch (err) {
+      setMessage(err.message)
+      setDeleteTarget(null)
+    }
   }
 
   const handleSubmit = async (event) => {
@@ -798,7 +843,7 @@ function RegisterPatientPage() {
           <div className="grid-two">
             <div className="form-row">
               <label>Data de nascimento</label>
-              <input value={form.birth_date} onChange={(event) => handleFieldChange('birth_date', event.target.value)} placeholder="dd/mm/aaaa" />
+              <input value={form.birth_date} onChange={(event) => handleFieldChange('birth_date', formatDateInput(event.target.value))} placeholder="dd/mm/aaaa" />
             </div>
             <div className="form-row">
               <label>Gênero</label>
@@ -813,7 +858,7 @@ function RegisterPatientPage() {
           <div className="grid-two">
             <div className="form-row">
               <label>Telefone</label>
-              <input value={form.phone} onChange={(event) => handleFieldChange('phone', event.target.value)} />
+              <input value={form.phone} onChange={(event) => handleFieldChange('phone', formatPhoneInput(event.target.value))} placeholder="(00) 00000-0000" />
             </div>
             <div className="form-row">
               <label>Email</label>
@@ -834,6 +879,7 @@ function RegisterPatientPage() {
                 <th>Nome</th>
                 <th>Idade</th>
                 <th>Telefone</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -842,12 +888,39 @@ function RegisterPatientPage() {
                   <td>{patient.full_name}</td>
                   <td>{patient.age || '-'}</td>
                   <td>{patient.phone || '-'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="delete-patient-btn"
+                      onClick={() => confirmDelete(patient)}
+                    >
+                      Excluir Paciente
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+      {deleteTarget && (
+        <div className="delete-overlay" onClick={cancelDelete}>
+          <div className="delete-modal" onClick={(event) => event.stopPropagation()}>
+            <p>
+              Deseja realmente excluir o paciente <strong>{deleteTarget.full_name}</strong>?
+              Esta ação não pode ser desfeita.
+            </p>
+            <div className="delete-confirm-actions">
+              <button type="button" className="button-secondary delete-cancel" onClick={cancelDelete}>
+                Cancelar
+              </button>
+              <button type="button" className="delete-confirm-btn" onClick={handleDelete}>
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
