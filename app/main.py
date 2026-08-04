@@ -83,6 +83,39 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
     return RedirectResponse(url="/generate-report", status_code=303)
 
 
+@app.post("/api/auth/login")
+async def api_login(request: Request):
+    payload = await request.json()
+    email = payload.get("email")
+    password = payload.get("password")
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
+    try:
+        await login_user(email, password, request)
+    except HTTPException as exc:
+        raise exc
+    except Exception as exc:
+        detail = str(exc)
+        if 'Invalid login credentials' in detail:
+            detail = 'E-mail ou senha inválidos.'
+        raise HTTPException(status_code=401, detail=detail)
+    return {"ok": True, "user": request.session.get("user")}
+
+
+@app.post("/api/auth/logout")
+async def api_logout(request: Request):
+    await logout_user(request)
+    return {"ok": True}
+
+
+@app.get("/api/auth/user")
+def api_user(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    return {"user": user}
+
+
 @app.get("/logout")
 async def logout(request: Request):
     await logout_user(request)
@@ -132,6 +165,41 @@ async def update_profile(request: Request, full_name: str = Form(""), profession
     return RedirectResponse(url="/account?updated=1", status_code=303)
 
 
+@app.patch("/api/account")
+async def api_update_account(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Não autenticado")
+
+    payload = await request.json()
+    full_name = (payload.get("full_name") or "").strip()
+    profession = (payload.get("profession") or "").strip()
+    gender = (payload.get("gender") or "").strip()
+
+    allowed_genders = {"Masculino", "Feminino", "Outro"}
+    if gender and gender not in allowed_genders:
+        raise HTTPException(status_code=400, detail="Gênero inválido")
+
+    client = get_authenticated_client(request)
+    response = client.table("profiles").update({
+        "full_name": full_name or user.get("full_name") or None,
+        "profession": profession or None,
+        "gender": gender or None,
+    }).eq("id", user["id"]).execute()
+
+    if getattr(response, "error", None):
+        raise HTTPException(status_code=500, detail=str(response.error))
+
+    updated_user = {
+        **user,
+        'full_name': full_name or user.get('full_name'),
+        'profession': profession or user.get('profession'),
+        'gender': gender or user.get('gender'),
+    }
+    request.session['user'] = updated_user
+    return {"ok": True, "user": updated_user}
+
+
 @app.get("/generate-report")
 async def generate_report(request: Request):
     user = get_user_from_session(request)
@@ -147,7 +215,8 @@ async def api_patients(request: Request):
         raise HTTPException(status_code=401, detail="Não autenticado")
 
     client = get_authenticated_client(request)
-    response = client.table("patients").select("id, full_name, birth_date").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
+    # select additional fields so frontend can display gender and contact and pre-fill edit form
+    response = client.table("patients").select("id, full_name, birth_date, gender, phone, email").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
     if getattr(response, "error", None):
         raise HTTPException(status_code=500, detail=str(response.error))
 
@@ -158,13 +227,25 @@ async def api_patients(request: Request):
     for p in raw_patients:
         age = ""
         birth_value = p.get("birth_date")
+        birth_date_display = ""
         if birth_value:
             try:
                 birth_date = datetime.fromisoformat(str(birth_value)).date()
                 age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+                birth_date_display = birth_date.strftime("%d/%m/%Y")
             except Exception:
                 age = ""
-        patients.append({"id": p.get("id"), "full_name": p.get("full_name") or "Paciente", "age": age})
+                birth_date_display = str(birth_value)
+
+        patients.append({
+            "id": p.get("id"),
+            "full_name": p.get("full_name") or "Paciente",
+            "age": age,
+            "birth_date": birth_date_display,
+            "gender": p.get("gender") or None,
+            "phone": p.get("phone") or None,
+            "email": p.get("email") or None,
+        })
     return patients
 
 
@@ -242,7 +323,6 @@ async def create_report(request: Request):
         interpretation = await generate_interpretation(report_name, observations, table_html, patient.get("birth_date"))
         ai_html = (
             '<div style="margin-top:20px;">'
-            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Interpretação Clínico-Pedagógica (IA)</h3>'
             f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{interpretation}</div>'
             '</div>'
         )
@@ -295,7 +375,6 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
     interpretation = await generate_interpretation(report_name, observations, table_html, patient.get("birth_date"))
     ai_html = (
         '<div style="margin-top:20px;">'
-        '<h3 style="margin:0 0 8px 0; font-size:13pt;">Interpretação Clínico-Pedagógica (IA)</h3>'
         f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{interpretation}</div>'
         '</div>'
     )
@@ -310,7 +389,8 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
 
 
 def build_combined_pdf(report_sections: list[str]) -> bytes:
-    pdf = PDF(format='A4')
+    pdf = PDF(orientation='P', unit='mm', format='A4')
+    pdf.set_margins(left=15, top=15, right=15)
     pdf.set_auto_page_break(auto=True, margin=15)
     for section_html in report_sections:
         pdf.add_page()
