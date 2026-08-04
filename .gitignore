@@ -69,3 +69,27 @@ instance/
 *.db
 *.sqlite3
 uploads/
+
+# Frontend / Node
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.turbo/
+frontend/.cache/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnp.*
+
+# JavaScript tooling (top-level)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+
+# Vite / bundler caches
+.vite/
+dist/
