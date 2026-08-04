@@ -89,18 +89,18 @@ def build_tac2_text_report(
     note_html = ""
     if note_text:
         note_html = (
-            '<div style="margin-top:20px;">'
-            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Instruções para a IA</h3>'
-            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{_escape_html(note_text)}</div>'
+            '<div style="margin-top:16px;">'
+            '<h3 style="margin:0 0 8px 0; font-size:11pt;">Instruções para a IA</h3>'
+            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:10px; border-radius:6px; font-size:9pt; line-height:1.5;">{_escape_html(note_text)}</div>'
             '</div>'
         )
     if results is None or results.empty:
         return (
-            "<div style=\"font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.45; color: #111827;\">"
+            "<div style=\"font-family: Arial, Helvetica, sans-serif; font-size: 9.5pt; line-height: 1.45; color: #111827;\">"
             "<p style=\"margin: 0 0 10px 0; text-align: justify;\">"
             "<strong>TAC (Teste de atenção por cancelamento)</strong> é um instrumento utilizado para avaliar a atenção sustentada, a atenção seletiva, a velocidade de processamento visual e o controle atencional."
             "</p>"
-            "<table style=\"width: 100%; border-collapse: collapse; font-size: 10.5pt;\">"
+            "<table style=\"width: 100%; border-collapse: collapse; font-size: 9pt;\">"
             "<thead>"
             "<tr>"
             "<th style=\"border: 1px solid #000000; background: #e2e8f0; padding: 8px; text-align: left;\">Indicador</th>"
@@ -128,7 +128,7 @@ def build_tac2_text_report(
         "</p>"
     )
     table = (
-        "<table style=\"width: 100%; border-collapse: collapse; font-size: 10.5pt;\">"
+        "<table style=\"width: 100%; border-collapse: collapse; font-size: 9pt;\">"
         "<thead>"
         "<tr>"
         "<th style=\"border: 1px solid #000000; background: #e2e8f0; padding: 8px; text-align: left;\">Indicador</th>"
@@ -145,7 +145,7 @@ def build_tac2_text_report(
         "</table>"
     )
     return (
-        "<div style=\"font-family: Arial, Helvetica, sans-serif; color: #111827;\">"
+        "<div style=\"font-family: Arial, Helvetica, sans-serif; color: #111827; font-size: 9.5pt;\">"
         f"{description}"
         f"{table}"
         "</div>\n"

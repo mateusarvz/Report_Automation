@@ -105,7 +105,7 @@ def _map_score(df: pd.DataFrame, raw_score, age):
 
 def _html_table(results_row):
     return (
-        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt;\">"
+        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 9pt;\">"
         "<thead><tr>"
         "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
         "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
@@ -148,7 +148,7 @@ def build_torre_londres_report(client, patient_id, patient_name, input_data, rep
     }
 
     html_text = (
-        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827;\">"
+        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827; font-size:9.5pt;\">"
         "<p style=\"margin:0 0 10px 0; text-align:justify;\">"
         "<strong>ToL (Teste da Torre de Londres)</strong> \u00e9 um instrumento neuropsicol\u00f3gico que avalia fun\u00e7\u00f5es executivas, "
         "principalmente planejamento e resolu\u00e7\u00e3o de problemas, atrav\u00e9s de tarefas como mover pe\u00e7as entre pinos seguindo regras espec\u00edficas."

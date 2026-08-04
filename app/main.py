@@ -323,7 +323,7 @@ async def create_report(request: Request):
         interpretation = await generate_interpretation(report_name, observations, table_html, patient.get("birth_date"))
         ai_html = (
             '<div style="margin-top:20px;">'
-            f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{interpretation}</div>'
+            f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:10px; border-radius:6px; font-size:9pt; line-height:1.5;">{interpretation}</div>'
             '</div>'
         )
         if report_text.endswith("</div>\n"):
@@ -375,7 +375,7 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
     interpretation = await generate_interpretation(report_name, observations, table_html, patient.get("birth_date"))
     ai_html = (
         '<div style="margin-top:20px;">'
-        f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{interpretation}</div>'
+        f'<div style="border:1px solid #cbd5e1; background:#f8fafc; padding:10px; border-radius:6px; font-size:9pt; line-height:1.5;">{interpretation}</div>'
         '</div>'
     )
     if report_text.endswith("</div>\n"):

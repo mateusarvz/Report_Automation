@@ -81,7 +81,7 @@ def _map_score(df: pd.DataFrame, raw_score, age):
 
 def _html_table(results_row):
     return (
-        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt;\">"
+        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 9pt;\">"
         "<thead><tr>"
         "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
         "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
@@ -115,9 +115,9 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
     note_html = ""
     if note_text:
         note_html = (
-            '<div style="margin-top:20px;">'
-            '<h3 style="margin:0 0 8px 0; font-size:13pt;">Instruções para a IA</h3>'
-            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:12px; border-radius:6px; font-size:10.5pt; line-height:1.5;">{_escape_html(note_text)}</div>'
+            '<div style="margin-top:16px;">'
+            '<h3 style="margin:0 0 8px 0; font-size:11pt;">Instruções para a IA</h3>'
+            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:10px; border-radius:6px; font-size:9pt; line-height:1.5;">{_escape_html(note_text)}</div>'
             '</div>'
         )
 
@@ -137,12 +137,12 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
     }])
 
     age_html = (
-        f"<p style=\"margin:0 0 12px 0;\"><strong>Idade do paciente:</strong> {age} anos</p>"
+        f"<p style=\"margin:0 0 12px 0; font-size:9.5pt;\"><strong>Idade do paciente:</strong> {age} anos</p>"
         if age is not None
         else ""
     )
     html = (
-        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827;\">"
+        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827; font-size:9.5pt;\">"
         "<p style=\"margin:0 0 10px 0; text-align:justify;\">"
         "<strong>Teste de Trilhas</strong> é um instrumento indicado para avaliar atenção e funções executivas. "
         "Enquanto a Parte A mede atenção concentrada e velocidade ao ligar números em ordem, a Parte B mede flexibilidade cognitiva e atenção alternada ao intercalar números e letras."

@@ -100,9 +100,8 @@ function LoginPage({ user, onLogin }) {
 
   return (
     <div className="page-center">
-      <div className="card">
+      <div className="card login-card">
         <img className="login-logo" src="/static/assets/logos/Logo_CogniReport_1.png" alt="CogniReports" />
-        <h1>Entrar</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <label htmlFor="email">E-mail</label>
@@ -123,12 +122,14 @@ function LoginPage({ user, onLogin }) {
 }
 
 function ProtectedLayout({ user, onLogout }) {
+  const [collapsed, setCollapsed] = useState(false)
+
   if (!user) {
     return <Navigate to="/login" replace />
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${collapsed ? 'sidebar-collapsed' : ''}`}>
       <aside className="sidebar">
         <div className="brand-row">
           <img className="brand-logo" src="/static/assets/logos/LOGO_TESTE.png" alt="CogniReports" />
@@ -136,28 +137,66 @@ function ProtectedLayout({ user, onLogout }) {
             <span className="brand-cogni">Cogni</span>
             <span className="brand-reports">Reports</span>
           </div>
+          <button
+            type="button"
+            className={`sidebar-toggle ${collapsed ? 'collapsed' : ''}`}
+            onClick={() => setCollapsed((current) => !current)}
+            aria-label="Alternar menu lateral"
+          >
+            <svg className="sidebar-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
         </div>
+        <div className="sidebar-divider"></div>
         <nav>
           <NavLink to="/generate-report" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Nova Avaliação
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+              <path d="M14 3v5h5" />
+            </svg>
+            <span className="nav-text">Nova Avaliação</span>
           </NavLink>
           <NavLink to="/register-patient" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Novo Paciente
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="19" y1="8" x2="19" y2="14" />
+              <line x1="22" y1="11" x2="16" y2="11" />
+            </svg>
+            <span className="nav-text">Novo Paciente</span>
           </NavLink>
           <NavLink to="/patients" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Pacientes
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span className="nav-text">Pacientes</span>
           </NavLink>
           <NavLink to="/chat-gemini" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Chat Gemini
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            <span className="nav-text">Chat Gemini</span>
           </NavLink>
           <NavLink to="/account" className={({ isActive }) => (isActive ? 'active' : '')}>
-            Perfil
+            <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span className="nav-text">Perfil</span>
           </NavLink>
-          <button type="button" className="button-secondary" onClick={onLogout}>
-            Sair
-          </button>
         </nav>
-        <div className="sidebar-footer">Logado como {user.email}</div>
+        <button type="button" className="sidebar-logout" onClick={onLogout}>
+          <svg className="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span className="nav-text">Sair</span>
+        </button>
       </aside>
       <main className="content">
         <Outlet />
@@ -176,7 +215,26 @@ function GenerateReportPage() {
   const [resultHtml, setResultHtml] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [invalidFields, setInvalidFields] = useState({})
+  const [patientDescription, setPatientDescription] = useState('')
   const reportPreviewRef = useRef(null)
+
+  const escapeHtml = (value) =>
+    String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
+  const validateField = (reportName, name, value) => {
+    const range = reportRanges[reportName] && reportRanges[reportName][name]
+    if (!range || value === '' || value === null || value === undefined) {
+      return true
+    }
+    const numeric = Number(value)
+    return !(Number.isNaN(numeric) || numeric < range.min || numeric > range.max)
+  }
 
   useEffect(() => {
     apiGet('/api/patients')
@@ -273,6 +331,17 @@ function GenerateReportPage() {
         [name]: value,
       },
     }))
+    const fieldKey = `${reportName}::${name}`
+    const valid = validateField(reportName, name, value)
+    setInvalidFields((current) => {
+      const next = { ...current }
+      if (!valid) {
+        next[fieldKey] = true
+      } else {
+        delete next[fieldKey]
+      }
+      return next
+    })
   }
 
   const validateInputs = () => {
@@ -309,7 +378,43 @@ function GenerateReportPage() {
     }
     setLoading(true)
     try {
-      const htmlParts = []
+      const patient = patients.find((p) => String(p.id) === String(selectedPatient))
+
+      // 1) Professional patient header (always present)
+      const patientHeader = `
+        <section class="pdf-patient-header">
+          <div class="pdf-header-title">Relatório de Avaliação Neuropsicológica</div>
+          <table class="pdf-patient-table">
+            <tbody>
+              <tr>
+                <th>Paciente</th>
+                <td>${escapeHtml(patient?.full_name || '-')}</td>
+                <th>Idade</th>
+                <td>${escapeHtml(patient?.age || '-')} anos</td>
+              </tr>
+              <tr>
+                <th>Data de nascimento</th>
+                <td>${escapeHtml(patient?.birth_date || '-')}</td>
+                <th>Gênero</th>
+                <td>${escapeHtml(patient?.gender || '-')}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      `
+
+      // 2) Patient description written by the user (only if provided)
+      const descriptionHtml = patientDescription.trim()
+        ? `
+          <section class="pdf-patient-description">
+            <h2>Descrição do paciente</h2>
+            <p>${escapeHtml(patientDescription).replace(/\n/g, '<br />')}</p>
+          </section>
+        `
+        : ''
+
+      // 3) Report results
+      const reportParts = []
       for (const report of loadedReports) {
         const response = await fetch('/api/reports', {
           method: 'POST',
@@ -326,9 +431,10 @@ function GenerateReportPage() {
           throw new Error(errorText || `Erro ao gerar relatório ${report.reportName}`)
         }
         const html = await response.text()
-        htmlParts.push(`<section class="report-result"><h2>${report.reportName}</h2>${html}</section>`)
+        reportParts.push(`<section class="report-result"><h2>${report.reportName}</h2>${html}</section>`)
       }
-      setResultHtml(htmlParts.join(''))
+
+      setResultHtml(`<div class="pdf-document">${patientHeader}${descriptionHtml}${reportParts.join('')}</div>`)
     } catch (err) {
       setMessage(err.message)
     } finally {
@@ -437,12 +543,25 @@ function GenerateReportPage() {
 
       {loadedReports.length > 0 && (
         <div className="form-card" style={{ marginTop: 20 }}>
+          <div className="description-block">
+            <h2>Descrição do paciente</h2>
+            <textarea
+              className="description-textarea"
+              rows="4"
+              value={patientDescription}
+              onChange={(event) => setPatientDescription(event.target.value)}
+              placeholder="Escreva aqui uma descrição sobre o paciente..."
+            />
+          </div>
           <h2>Dados dos relatórios carregados</h2>
           {loadedReports.map((report) => (
             <div key={report.reportName} className="report-section">
               <h3>{report.reportName}</h3>
-              {report.fields.map((field) => (
-                <div key={field.name} className="form-row">
+              {report.fields.map((field) => {
+                const fieldKey = `${report.reportName}::${field.name}`
+                const isInvalid = !!invalidFields[fieldKey]
+                return (
+                <div key={field.name} className={`form-row ${isInvalid ? 'invalid' : ''}`}>
                   <label>{field.label}</label>
                   {field.type === 'textarea' ? (
                     <textarea
@@ -458,7 +577,8 @@ function GenerateReportPage() {
                     />
                   )}
                 </div>
-              ))}
+                )
+              })}
             </div>
           ))}
           <div className="form-row">
@@ -472,11 +592,6 @@ function GenerateReportPage() {
         </div>
       )}
 
-      {selectedReports.length > 0 && !loadedReports.length && !loading && (
-        <div className="message" style={{ marginTop: 16 }}>
-          Selecione um ou mais relatórios e clique em Carregar Relatório para ver os campos.
-        </div>
-      )}
       {message && <p className="message">{message}</p>}
       {resultHtml && (
         <div className="card pdf-preview" style={{ marginTop: 20 }} ref={reportPreviewRef}>
