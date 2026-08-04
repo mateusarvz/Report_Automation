@@ -1,0 +1,58 @@
+# Git
+.git/
+.gitignore
+
+# Ambiente / segredos
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+service-account*.json
+*.secret
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / frontend (o build é feito dentro do Docker)
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+frontend/.turbo/
+frontend/.cache/
+
+# Builds genéricos
+dist/
+build/
+
+# Dados locais / runtime
+backups/
+*.db
+*.sqlite3
+uploads/
+logs/
+instance/
+
+# IDE / ferramentas locais
+.vscode/
+.idea/
+.claude/
+.agents/
+skills-lock.json
+*.original.md
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

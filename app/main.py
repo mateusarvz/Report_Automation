@@ -9,7 +9,7 @@ from fpdf import FPDF
 from fpdf import html as fpdf_html
 from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -20,6 +20,9 @@ from app.report_data import build_tac2_dataframes, build_tac2_text_report
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 SETTINGS = get_settings()
+
+FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+SPA_INDEX = FRONTEND_DIST / "index.html"
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -36,6 +39,15 @@ app.add_middleware(
     max_age=None,
 )
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
+# Serve o frontend React buildado (bundles hasheados do Vite)
+if (FRONTEND_DIST / "assets").is_dir():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+
+def serve_spa():
+    """Devolve o index.html do SPA React (login/rotas tratadas no cliente)."""
+    return FileResponse(str(SPA_INDEX))
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,18 +68,12 @@ def health_check():
 
 @app.get("/")
 async def root(request: Request):
-    user = get_user_from_session(request)
-    if user:
-        return RedirectResponse(url="/generate-report", status_code=303)
-    return RedirectResponse(url="/login", status_code=303)
+    return serve_spa()
 
 
 @app.get("/login")
 async def login_page(request: Request):
-    user = get_user_from_session(request)
-    if user:
-        return RedirectResponse(url="/generate-report", status_code=303)
-    return templates.TemplateResponse(request, "login.html", {"request": request, "error": None})
+    return serve_spa()
 
 
 @app.post("/login")
@@ -124,11 +130,7 @@ async def logout(request: Request):
 
 @app.get("/account")
 async def account(request: Request):
-    user = get_user_from_session(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-    updated = request.query_params.get("updated") == "1"
-    return templates.TemplateResponse(request, "account.html", {"request": request, "user": user, "user_display_name": build_display_name(user), "current_path": request.url.path, "updated": updated})
+    return serve_spa()
 
 
 @app.post("/account/update-profile")
@@ -202,10 +204,7 @@ async def api_update_account(request: Request):
 
 @app.get("/generate-report")
 async def generate_report(request: Request):
-    user = get_user_from_session(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse(request, "generate_report.html", {"request": request, "user": user, "user_display_name": build_display_name(user), "current_path": request.url.path})
+    return serve_spa()
 
 
 @app.get("/api/patients")
@@ -444,78 +443,12 @@ async def create_reports_pdf(request: Request):
 
 @app.get("/register-patient")
 async def register_patient(request: Request):
-    user = get_user_from_session(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-
-    client = get_authenticated_client(request)
-    response = client.table("patients").select("id, full_name, birth_date, phone, created_at").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
-    raw_patients = getattr(response, "data", []) or []
-
-    from datetime import date, datetime
-    today = date.today()
-    patients = []
-    for p in raw_patients:
-        birth_value = p.get("birth_date")
-        birth_date_display = ""
-        age = ""
-        if birth_value:
-            try:
-                birth_date = datetime.fromisoformat(str(birth_value)).date()
-                birth_date_display = birth_date.strftime("%d/%m/%Y")
-                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-            except Exception:
-                birth_date_display = str(birth_value)
-                age = ""
-
-        patients.append({
-            "id": p.get("id"),
-            "full_name": p.get("full_name") or "",
-            "age": age,
-            "birth_date": birth_date_display,
-            "phone": p.get("phone") or "",
-        })
-
-    return templates.TemplateResponse(request, "register_patient.html", {"request": request, "user": user, "user_display_name": build_display_name(user), "current_path": request.url.path, "patients": patients})
+    return serve_spa()
 
 
 @app.get("/patients")
 async def patients(request: Request):
-    user = get_user_from_session(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-
-    client = get_authenticated_client(request)
-    response = client.table("patients").select("id, full_name, birth_date, gender, email, phone, created_at").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
-    raw_patients = getattr(response, "data", []) or []
-
-    from datetime import date, datetime
-    today = date.today()
-    patients = []
-    for p in raw_patients:
-        birth_value = p.get("birth_date")
-        birth_date_display = ""
-        age = ""
-        if birth_value:
-            try:
-                birth_date = datetime.fromisoformat(str(birth_value)).date()
-                birth_date_display = birth_date.strftime("%d/%m/%Y")
-                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-            except Exception:
-                birth_date_display = str(birth_value)
-                age = ""
-
-        patients.append({
-            "id": p.get("id"),
-            "full_name": p.get("full_name") or "",
-            "birth_date": birth_date_display,
-            "age": age,
-            "gender": p.get("gender") or "",
-            "email": p.get("email") or "",
-            "phone": p.get("phone") or "",
-        })
-
-    return templates.TemplateResponse(request, "patients.html", {"request": request, "user": user, "user_display_name": build_display_name(user), "current_path": request.url.path, "patients": patients})
+    return serve_spa()
 
 
 @app.patch("/api/patients/{patient_id}")
@@ -716,10 +649,7 @@ def get_profiles(request: Request):
 
 @app.get("/chat-gemini")
 async def chat_gemini_page(request: Request):
-    user = get_user_from_session(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse(request, "chat_gemini.html", {"request": request, "user": user, "user_display_name": build_display_name(user), "current_path": request.url.path})
+    return serve_spa()
 
 
 @app.post("/api/chat-gemini")
@@ -755,3 +685,14 @@ async def api_chat_gemini(request: Request):
             raise HTTPException(status_code=e.response.status_code, detail=f"Erro na API do Gemini: {err_detail}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/{path:path}")
+async def spa_fallback(path: str):
+    """Fallback do SPA: serve o index.html para rotas do cliente (React Router).
+
+    /api, /static e /assets têm rotas próprias; se chegarem aqui, devolvem 404.
+    """
+    if path.startswith(("api/", "static/", "assets/")):
+        raise HTTPException(status_code=404, detail="Not found")
+    return serve_spa()
