@@ -22,6 +22,21 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 SETTINGS = get_settings()
 
 FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+
+
+def _patient_age_from_birth_date(birth_value):
+    from datetime import date, datetime
+    if not birth_value:
+        return None
+    try:
+        birth_date = datetime.fromisoformat(str(birth_value)).date()
+    except Exception:
+        try:
+            birth_date = datetime.strptime(str(birth_value), "%d/%m/%Y").date()
+        except Exception:
+            return None
+    today = date.today()
+    return int(today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day)))
 SPA_INDEX = FRONTEND_DIST / "index.html"
 
 @asynccontextmanager
@@ -309,7 +324,16 @@ async def create_report(request: Request):
 
         if not report_module or not hasattr(report_module, 'build_report'):
             raise HTTPException(status_code=400, detail="Relatório não suportado")
-        report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", input_data)
+
+        # Report modules are called without the DB client, so they cannot
+        # resolve the patient's age themselves. Inject the patient's age so the
+        # report can select the correct age column in its score tables.
+        report_input = dict(input_data or {})
+        patient_age = _patient_age_from_birth_date(patient.get("birth_date"))
+        if patient_age is not None:
+            report_input["_patient_age"] = patient_age
+
+        report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", report_input)
         if isinstance(report_output, str):
             report_text = report_output
 
@@ -360,7 +384,16 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
 
         if not report_module or not hasattr(report_module, 'build_report'):
             raise HTTPException(status_code=400, detail="Relatório não suportado")
-        report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", input_data)
+
+        # Report modules are called without the DB client, so they cannot
+        # resolve the patient's age themselves. Inject the patient's age so the
+        # report can select the correct age column in its score tables.
+        report_input = dict(input_data or {})
+        patient_age = _patient_age_from_birth_date(patient.get("birth_date"))
+        if patient_age is not None:
+            report_input["_patient_age"] = patient_age
+
+        report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", report_input)
         if isinstance(report_output, str):
             report_text = report_output
 

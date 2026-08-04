@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import { apiGet, apiPatch, apiPost, apiDelete } from './api'
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.js'
@@ -41,6 +41,45 @@ function formatPhoneInput(value) {
   if (digits.length <= 2) return digits
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
+
+// State of the "Nova Avaliação" page lives here, mounted inside
+// ProtectedLayout. Because the layout stays mounted while switching
+// between tabs, the page keeps its data (patient, reports, fields,
+// preview) when the user navigates away and comes back. The provider
+// is unmounted on logout, so the data is fully reset only then.
+const GenerateReportContext = createContext(null)
+
+function GenerateReportProvider({ children }) {
+  const [patients, setPatients] = useState([])
+  const [reportTypes, setReportTypes] = useState([])
+  const [selectedPatient, setSelectedPatient] = useState('')
+  const [selectedReports, setSelectedReports] = useState([])
+  const [loadedReports, setLoadedReports] = useState([])
+  const [formData, setFormData] = useState({})
+  const [resultHtml, setResultHtml] = useState('')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [invalidFields, setInvalidFields] = useState({})
+  const [patientDescription, setPatientDescription] = useState('')
+
+  const value = {
+    patients, setPatients,
+    reportTypes, setReportTypes,
+    selectedPatient, setSelectedPatient,
+    selectedReports, setSelectedReports,
+    loadedReports, setLoadedReports,
+    formData, setFormData,
+    resultHtml, setResultHtml,
+    message, setMessage,
+    loading, setLoading,
+    generating, setGenerating,
+    invalidFields, setInvalidFields,
+    patientDescription, setPatientDescription,
+  }
+
+  return <GenerateReportContext.Provider value={value}>{children}</GenerateReportContext.Provider>
 }
 
 function App() {
@@ -220,24 +259,29 @@ function ProtectedLayout({ user, onLogout }) {
         </button>
       </aside>
       <main className="content">
-        <Outlet />
+        <GenerateReportProvider>
+          <Outlet />
+        </GenerateReportProvider>
       </main>
     </div>
   )
 }
 
 function GenerateReportPage() {
-  const [patients, setPatients] = useState([])
-  const [reportTypes, setReportTypes] = useState([])
-  const [selectedPatient, setSelectedPatient] = useState('')
-  const [selectedReports, setSelectedReports] = useState([])
-  const [loadedReports, setLoadedReports] = useState([])
-  const [formData, setFormData] = useState({})
-  const [resultHtml, setResultHtml] = useState('')
-  const [message, setMessage] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [invalidFields, setInvalidFields] = useState({})
-  const [patientDescription, setPatientDescription] = useState('')
+  const {
+    patients, setPatients,
+    reportTypes, setReportTypes,
+    selectedPatient, setSelectedPatient,
+    selectedReports, setSelectedReports,
+    loadedReports, setLoadedReports,
+    formData, setFormData,
+    resultHtml, setResultHtml,
+    message, setMessage,
+    loading, setLoading,
+    generating, setGenerating,
+    invalidFields, setInvalidFields,
+    patientDescription, setPatientDescription,
+  } = useContext(GenerateReportContext)
   const reportPreviewRef = useRef(null)
 
   const escapeHtml = (value) =>
@@ -397,7 +441,7 @@ function GenerateReportPage() {
     if (!validateInputs()) {
       return
     }
-    setLoading(true)
+    setGenerating(true)
     try {
       const patient = patients.find((p) => String(p.id) === String(selectedPatient))
 
@@ -459,7 +503,7 @@ function GenerateReportPage() {
     } catch (err) {
       setMessage(err.message)
     } finally {
-      setLoading(false)
+      setGenerating(false)
     }
   }
 
@@ -496,8 +540,15 @@ function GenerateReportPage() {
     }
   }
 
+  // Auto-scroll to the start of the generated report preview
+  useEffect(() => {
+    if (resultHtml && reportPreviewRef.current) {
+      reportPreviewRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [resultHtml])
+
   return (
-    <div>
+    <div className="generate-page">
       <div className="topbar">
         <section className="page-header">
           <img className="page-icon-image" src="/static/assets/icons/nova-avaliacao.png" alt="Nova Avaliação" />
@@ -574,7 +625,7 @@ function GenerateReportPage() {
               placeholder="Escreva aqui uma descrição sobre o paciente..."
             />
           </div>
-          <h2>Dados dos relatórios carregados</h2>
+          <div className="section-divider" />
           {loadedReports.map((report) => (
             <div key={report.reportName} className="report-section">
               <h3>{report.reportName}</h3>
@@ -603,11 +654,8 @@ function GenerateReportPage() {
             </div>
           ))}
           <div className="form-row">
-            <button type="button" className="button" onClick={handleGenerate}>
+            <button type="button" className="button" onClick={handleGenerate} disabled={generating}>
               Gerar relatório
-            </button>
-            <button type="button" className="button-secondary" onClick={handleDownloadPdf}>
-              Baixar PDF
             </button>
           </div>
         </div>
@@ -617,6 +665,21 @@ function GenerateReportPage() {
       {resultHtml && (
         <div className="card pdf-preview" style={{ marginTop: 20 }} ref={reportPreviewRef}>
           <div className="pdf-inner" dangerouslySetInnerHTML={{ __html: resultHtml }} />
+        </div>
+      )}
+      {resultHtml && (
+        <div className="download-block" style={{ marginTop: 16 }}>
+          <button type="button" className="button" onClick={handleDownloadPdf} disabled={loading}>
+            Baixar
+          </button>
+        </div>
+      )}
+      {generating && <div className="generate-blur-layer" />}
+      {generating && (
+        <div className="generate-overlay">
+          <div className="generate-overlay-spinner" />
+          <p className="generate-overlay-title">Gerando relatorios</p>
+          <p className="generate-overlay-subtitle">Aguarde alguns instantes....</p>
         </div>
       )}
     </div>

@@ -41,10 +41,11 @@ async def generate_interpretation(report_name: str, observations: str, table_htm
     # 4. Manual / directions (IA-directions.txt)
     prompt = (
         "INSTRUÇÃO PRINCIPAL (CRÍTICA):\n"
-        "Atue como um profissional de neuropedagogia e escreva um texto de 10 a 20 palavras. Ultilize linguagem formal, profissional para a área de psicologia."
-        "Evite dar diagnosticos.Use mais palavras apenas se o USUARIO mandar."
+        "Atue como um profissional de neuropedagogia. Ultilize linguagem formal, profissional para a área de psicologia."
+        f"{"Gere de 50 e 70 palavras" if observations else "Gere entre 10 e 20 palavras"} "
+        "Evite dar diagnosticos."
         "Atue sempre como se você estivesse escrevendo a sua interpretação dos resultados.\n\n"
-        
+
         "NÃO FAÇA O SEGUINTE:\n"
         "Voce não deve detalhar as informações dos resultados dos testes."
         "Voce não deve fazer sugestões nem recomendações"
@@ -52,11 +53,10 @@ async def generate_interpretation(report_name: str, observations: str, table_htm
 
         "DADOS DE ENTRADA DO PACIENTE E DO TESTE:\n"
         f"Idade do Paciente: {age_info}\n"
-        f"Opinião do Profissional da área sobre o paciente:\n{observations or 'Nenhuma observação inserida.'} Trate essa opnião como se ela fosse pensada por voce"
-        "Qualquer informação da Opinião do Profissional da área sobre o paciente Deve ser tratada como se fosse sua. Portando voce deve falar dela como se fossem as suas proprias conclusões"
-        "Caso haja muitas informações na opinião do profissional, voce deve considerar o limite de palavras para entre 20 e 50 palavras"
+        f"Opinião do Profissional da área sobre o paciente (apenas deste relatório):\n{observations or 'Nenhuma observação inserida.'} Trate essa opnião como se ela fosse pensada por voce."
+        "Qualquer informação da Opinião do Profissional da área sobre o paciente Deve ser tratada como se fosse sua. Portando voce deve falar dela como se fossem as suas proprias conclusões."
         f"Resultados:\n{table_html}\n\n"
-        
+
         "DIRETRIZES E MANUAL DE REFERÊNCIA DO TESTE:\n"
         f"{directions_content or 'Caso nao hajam diretrizes, Voce deve falar NAO HA DIRETRIZES claramente ao final do seu prompt'}\n"
     )

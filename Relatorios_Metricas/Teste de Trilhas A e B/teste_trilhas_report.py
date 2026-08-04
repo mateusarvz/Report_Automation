@@ -65,9 +65,9 @@ def _map_score(df: pd.DataFrame, raw_score, age):
     except Exception:
         return np.nan
     if age is not None and age >= 15:
-        age_col = "Jovens Adultos"
-    elif age is not None and str(age) in df.columns:
-        age_col = str(age)
+        age_col = "Jovens_Adultos"
+    elif age is not None and f"{age}_anos" in df.columns:
+        age_col = f"{age}_anos"
     else:
         age_col = next((c for c in df.columns if c != "Escore bruto"), None)
     if not age_col or age_col not in df.columns:
@@ -103,7 +103,12 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
         "parte_ba": report_dir / "Teste_deTrilhas_Correção_Parte_B-A.csv",
     }
     dfs = {k: _read_csv_numeric(v) for k, v in paths.items()}
-    age = _compute_age_from_client(client, patient_id)
+    # The backend injects the patient's age via input_data["_patient_age"]
+    # because this module is normally called without the DB client. Prefer it
+    # and fall back to the client lookup for callers that do pass one.
+    age = input_data.get("_patient_age")
+    if age is None:
+        age = _compute_age_from_client(client, patient_id)
     a = input_data.get("resultado_parte_a")
     b = input_data.get("resultado_parte_b")
     ba = input_data.get("resultado_parte_ba")
@@ -136,18 +141,12 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
         "parte_ba_categoria": classify_score_metric(score_ba),
     }])
 
-    age_html = (
-        f"<p style=\"margin:0 0 12px 0; font-size:9.5pt;\"><strong>Idade do paciente:</strong> {age} anos</p>"
-        if age is not None
-        else ""
-    )
     html = (
         "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827; font-size:9.5pt;\">"
         "<p style=\"margin:0 0 10px 0; text-align:justify;\">"
         "<strong>Teste de Trilhas</strong> é um instrumento indicado para avaliar atenção e funções executivas. "
         "Enquanto a Parte A mede atenção concentrada e velocidade ao ligar números em ordem, a Parte B mede flexibilidade cognitiva e atenção alternada ao intercalar números e letras."
         "</p>"
-        f"{age_html}"
         f"{_html_table({'parte_a_score': f'{score_a:.0f}' if pd.notna(score_a) else 'N/A', 'parte_a_categoria': classify_score_metric(score_a) or 'N/A', 'parte_b_score': f'{score_b:.0f}' if pd.notna(score_b) else 'N/A', 'parte_b_categoria': classify_score_metric(score_b) or 'N/A', 'parte_ba_score': f'{score_ba:.0f}' if pd.notna(score_ba) else 'N/A', 'parte_ba_categoria': classify_score_metric(score_ba) or 'N/A'})}"
         "</div>\n"
     )

@@ -150,9 +150,19 @@ def build_tac2_report(
     }
     idade = _compute_age_from_client(client, patient_id)
 
-    p1 = input_data.get("pontuacao_primeira_parte")
-    p2 = input_data.get("pontuacao_segunda_parte")
-    p3 = input_data.get("pontuacao_terceira_parte")
+    def _to_int(value):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    # Normalize the raw inputs to integers. The frontend may send the field
+    # values as strings, so summing them directly would concatenate instead of
+    # adding (e.g. "10"+"5"+"3" -> "1053"). Converting here guarantees the
+    # Score Geral is computed from the real sum of the raw scores.
+    p1 = _to_int(input_data.get("pontuacao_primeira_parte"))
+    p2 = _to_int(input_data.get("pontuacao_segunda_parte"))
+    p3 = _to_int(input_data.get("pontuacao_terceira_parte"))
 
     mapped1 = _map_score(dfs.get("primeira_parte"), p1, idade)
     mapped2 = _map_score(dfs.get("segunda_parte"), p2, idade)
