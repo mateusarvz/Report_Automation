@@ -1,4 +1,5 @@
 fastapi
+fpdf2
 uvicorn[standard]
 authlib
 httpx
