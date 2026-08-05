@@ -107,13 +107,13 @@ def _html_table(results_row):
     return (
         "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 9pt;\">"
         "<thead><tr>"
-        "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
-        "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
-        "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%;\">Classifica\u00e7\u00e3o</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%;\">Classifica\u00e7\u00e3o</th>"
         "</tr></thead><tbody>"
-        f"<tr><td style=\"border:1px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o Total</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['total_score']}</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['total_categoria']}</td></tr>"
-        f"<tr><td style=\"border:1px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o nos itens de 4 movimentos</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['m4_score']}</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['m4_categoria']}</td></tr>"
-        f"<tr><td style=\"border:1px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o nos itens de 5 movimentos</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['m5_score']}</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['m5_categoria']}</td></tr>"
+        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o Total</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['total_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['total_categoria']}</td></tr>"
+        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o nos itens de 4 movimentos</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m4_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m4_categoria']}</td></tr>"
+        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o nos itens de 5 movimentos</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m5_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m5_categoria']}</td></tr>"
         "</tbody></table>"
     )
 

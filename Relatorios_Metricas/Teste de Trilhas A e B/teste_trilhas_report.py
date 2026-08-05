@@ -83,13 +83,13 @@ def _html_table(results_row):
     return (
         "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 9pt;\">"
         "<thead><tr>"
-        "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
-        "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
-        "<th style=\"border:1px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%;\">Classificação</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%;\">Classificação</th>"
         "</tr></thead><tbody>"
-        f"<tr><td style=\"border:1px solid #000000; padding:8px;\">Parte A</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['parte_a_score']}</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['parte_a_categoria']}</td></tr>"
-        f"<tr><td style=\"border:1px solid #000000; padding:8px;\">Parte B</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['parte_b_score']}</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['parte_b_categoria']}</td></tr>"
-        f"<tr><td style=\"border:1px solid #000000; padding:8px;\">Parte B-A</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['parte_ba_score']}</td><td style=\"border:1px solid #000000; padding:8px; text-align:center;\">{results_row['parte_ba_categoria']}</td></tr>"
+        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Parte A</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_a_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_a_categoria']}</td></tr>"
+        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Parte B</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_b_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_b_categoria']}</td></tr>"
+        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Parte B-A</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_ba_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_ba_categoria']}</td></tr>"
         "</tbody></table>"
     )
 

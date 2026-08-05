@@ -474,6 +474,46 @@ async def create_reports_pdf(request: Request):
     return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'attachment; filename="relatorios_combinados.pdf"'})
 
 
+@app.post('/api/conclusion')
+async def api_conclusion(request: Request):
+    """
+    Gera a conclusão final do relatório PDF usando conclusao_service.py.
+
+    Recebe do frontend a idade (via data de nascimento do paciente), os
+    resultados de cada relatório selecionado, a descrição do paciente e a
+    variável "user_ia_direction_conclusion".
+    """
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail='Não autenticado')
+
+    payload = await request.json()
+    patient_id = payload.get('patient_id')
+    report_results = payload.get('report_results') or []
+    patient_description = payload.get('patient_description') or ''
+    user_ia_direction_conclusion = payload.get('user_ia_direction_conclusion') or ''
+    if not patient_id:
+        raise HTTPException(status_code=400, detail='patient_id é obrigatório')
+
+    client = get_authenticated_client(request)
+    patient_resp = client.table('patients').select('id, full_name, birth_date').eq('psychologist_id', user['id']).eq('id', patient_id).limit(1).execute()
+    if getattr(patient_resp, 'error', None):
+        raise HTTPException(status_code=500, detail=str(patient_resp.error))
+    raw_data = getattr(patient_resp, 'data', []) or []
+    if not raw_data:
+        raise HTTPException(status_code=404, detail='Paciente não encontrado')
+    patient = raw_data[0]
+
+    from app.conclusao_service import generate_conclusion
+    conclusion_html = await generate_conclusion(
+        birth_date=patient.get('birth_date'),
+        report_results=report_results,
+        patient_description=patient_description,
+        user_ia_direction_conclusion=user_ia_direction_conclusion,
+    )
+    return HTMLResponse(conclusion_html)
+
+
 @app.get("/register-patient")
 async def register_patient(request: Request):
     return serve_spa()
