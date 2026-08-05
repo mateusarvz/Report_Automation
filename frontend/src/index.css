@@ -136,7 +136,7 @@ button {
 .report-result h2.conclusion-title {
     /* Título "Conclusão": em negrito e um pouco maior que os títulos de teste */
     font-family: 'Georgia', 'Palatino Linotype', 'Times New Roman', serif;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: 0.02em;
     color: #0f172a;
@@ -152,7 +152,7 @@ button {
 
 .conclusion-section p {
     font-family: 'Georgia', 'Palatino Linotype', 'Times New Roman', serif;
-    font-size: 9.5px;
+    font-size: 10.5px;
     line-height: 1.6;
     color: #1e293b;
     text-align: justify;
