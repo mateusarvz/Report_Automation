@@ -80,12 +80,19 @@ button {
     box-sizing: border-box;
 }
 
-/* Preview that should match A4 width */
+/* Preview that should match A4 width.
+   O .pdf-preview é o elemento capturado pelo html2pdf para o download. Para que o
+   PDF final não tenha contorno, removemos borda/sombra/raio do cartão, mas mantemos
+   o padding, que cria o espaçamento interno das laterais. */
 .pdf-preview {
     width: 794px; /* A4 width @96dpi ≈ 794px */
     max-width: 100%;
     margin: 0 auto;
     padding: 24px;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff;
 }
 
 .pdf-preview {
@@ -98,8 +105,57 @@ button {
     width: 100%;
 }
 
+/* Bordas das tabelas de TODOS os relatórios mais finas.
+   O pdf mostrado em HTML e o baixado são o mesmo elemento capturado pelo html2pdf,
+   portanto esta regra vale para os dois e os mantém idênticos. O !important sobrescreve
+   o border:1px aplicado inline nos relatórios. */
+.pdf-inner table,
+.pdf-inner table th,
+.pdf-inner table td {
+    border-width: 0.5px !important;
+    border-style: solid !important;
+}
+
 .report-result {
     page-break-inside: avoid;
+    /* Pequeno espaçamento entre cada relatório no PDF final */
+    margin-bottom: 16px;
+}
+
+.report-result h2 {
+    /* Título de cada relatório: um pouco maior e com fonte mais arredondada */
+    font-family: 'Varela Round', 'Quicksand', 'Baloo 2', 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 0 0 8px 0;
+}
+
+.report-result h2.conclusion-title {
+    /* Título "Conclusão": em negrito e um pouco maior que os títulos de teste */
+    font-family: 'Georgia', 'Palatino Linotype', 'Times New Roman', serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #0f172a;
+    text-transform: uppercase;
+}
+
+/* Seção de Conclusão: espaçamento extra antes dela e fonte profissional (serifada)
+   para o corpo do texto, condizente com um relatório de psicologia. */
+.conclusion-section {
+    margin-top: 28px;
+    page-break-inside: avoid;
+}
+
+.conclusion-section p {
+    font-family: 'Georgia', 'Palatino Linotype', 'Times New Roman', serif;
+    font-size: 9.5px;
+    line-height: 1.6;
+    color: #1e293b;
+    text-align: justify;
 }
 
 .pdf-document {
@@ -933,7 +989,7 @@ thead th {
     right: -40px;
     left: 260px;
     z-index: 40;
-    background: rgba(15, 23, 42, 0.28);
+    background: rgba(15, 23, 42, 0.10);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
 }

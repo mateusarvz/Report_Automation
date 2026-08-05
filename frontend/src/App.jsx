@@ -63,6 +63,7 @@ function GenerateReportProvider({ children }) {
   const [generating, setGenerating] = useState(false)
   const [invalidFields, setInvalidFields] = useState({})
   const [patientDescription, setPatientDescription] = useState('')
+  const [userIaDirectionConclusion, setUserIaDirectionConclusion] = useState('')
 
   const value = {
     patients, setPatients,
@@ -77,6 +78,7 @@ function GenerateReportProvider({ children }) {
     generating, setGenerating,
     invalidFields, setInvalidFields,
     patientDescription, setPatientDescription,
+    userIaDirectionConclusion, setUserIaDirectionConclusion,
   }
 
   return <GenerateReportContext.Provider value={value}>{children}</GenerateReportContext.Provider>
@@ -281,6 +283,7 @@ function GenerateReportPage() {
     generating, setGenerating,
     invalidFields, setInvalidFields,
     patientDescription, setPatientDescription,
+    userIaDirectionConclusion, setUserIaDirectionConclusion,
   } = useContext(GenerateReportContext)
   const reportPreviewRef = useRef(null)
 
@@ -499,6 +502,28 @@ function GenerateReportPage() {
         reportParts.push(`<section class="report-result"><h2>${report.reportName}</h2>${html}</section>`)
       }
 
+      // 4) Conclusion generated server-side (at the end of the PDF)
+      try {
+        const conclusionResp = await fetch('/api/conclusion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            patient_id: selectedPatient,
+            report_results: loadedReports.map((report, index) => ({
+              report_name: report.reportName,
+              results_html: reportParts[index] || '',
+            })),
+            patient_description: patientDescription,
+            user_ia_direction_conclusion: userIaDirectionConclusion,
+          }),
+        })
+        const conclusionBody = await conclusionResp.text()
+        reportParts.push(`<section class="report-result conclusion-section"><h2 class="conclusion-title">Síntese dos resultados</h2>${conclusionBody}</section>`)
+      } catch (err) {
+        // A conclusão é opcional: se falhar, o preview dos relatórios ainda é exibido
+      }
+
       setResultHtml(`<div class="pdf-document">${patientHeader}${descriptionHtml}${reportParts.join('')}</div>`)
     } catch (err) {
       setMessage(err.message)
@@ -653,6 +678,17 @@ function GenerateReportPage() {
               })}
             </div>
           ))}
+          <div className="section-divider" />
+          <div className="description-block">
+            <h2>Direção pra conclusão</h2>
+            <textarea
+              className="description-textarea"
+              rows="4"
+              value={userIaDirectionConclusion}
+              onChange={(event) => setUserIaDirectionConclusion(event.target.value)}
+              placeholder="Escreva aqui a direção para a conclusão do relatório..."
+            />
+          </div>
           <div className="form-row">
             <button type="button" className="button" onClick={handleGenerate} disabled={generating}>
               Gerar relatório
