@@ -1,22 +1,27 @@
-import io
+﻿import io
 import os
 import re
+import sys
+import asyncio
 from contextlib import asynccontextmanager
+from html import escape
 from pathlib import Path
 
 import httpx
-from fpdf import FPDF
-from fpdf import html as fpdf_html
 from fastapi import FastAPI, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from playwright.sync_api import sync_playwright
 
 from app.auth import login_user, logout_user, get_user_from_session, templates, get_authenticated_client, build_display_name
 from app.config import get_settings
 from app.report_store import ensure_report_folders, save_dataframe, get_report_input_fields, get_report_folders
 from app.report_data import build_tac2_dataframes, build_tac2_text_report
+
+if sys.platform.startswith('win') and hasattr(asyncio, 'WindowsProactorEventLoopPolicy'):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 SETTINGS = get_settings()
@@ -37,6 +42,158 @@ def _patient_age_from_birth_date(birth_value):
             return None
     today = date.today()
     return int(today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day)))
+
+
+def _format_birth_date(value) -> str:
+    from datetime import datetime
+    if not value:
+        return "-"
+    if hasattr(value, "strftime"):
+        return value.strftime("%d/%m/%Y")
+    value_str = str(value)
+    try:
+        return datetime.fromisoformat(value_str).strftime("%d/%m/%Y")
+    except Exception:
+        return value_str
+
+
+def _build_pdf_header_html(patient: dict, profile: dict | None = None) -> str:
+    birth_date = _format_birth_date(patient.get("birth_date"))
+    age = _patient_age_from_birth_date(patient.get("birth_date"))
+    age_text = f"{age} anos" if age is not None else "-"
+    profile = profile or {}
+    return (
+        '<div class="pdf-document">'
+        '<div style="font-size:16px; font-weight:700; color:#0f172a; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;">Relatório de Avaliação Neuropsicológica</div>'
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:9.5pt; margin-bottom:14px;">'
+        f'<tr>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Paciente</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:32%;">{escape(patient.get("full_name") or "Paciente")}</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Responsável</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:32%;">{escape(patient.get("responsavel") or "-")}</td>'
+        f'</tr>'
+        f'<tr>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Idade</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(age_text)}</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Profissional</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(profile.get("profession") or "-")}</td>'
+        f'</tr>'
+        f'<tr>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Data de nascimento</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(birth_date)}</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Gênero</td>'
+        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(patient.get("gender") or "-")}</td>'
+        f'</tr>'
+        '</table>'
+    )
+
+
+def _build_patient_description_html(patient_description: str) -> str:
+    if not patient_description or not patient_description.strip():
+        return ""
+    description_html = escape(patient_description).replace("\n", "<br />")
+    return (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
+        '<tr>'
+        '<td style="border:0.5px solid #000000; padding:8px 10px; background:#f8fafc; font-weight:700;">Descrição do paciente</td>'
+        '</tr>'
+        '<tr>'
+        f'<td style="border:0.5px solid #000000; padding:8px 10px; font-size:9.5pt; line-height:1.55;">{description_html}</td>'
+        '</tr>'
+        '</table>'
+    )
+
+
+def _build_pdf_page_html(body_html: str) -> str:
+    return f"""<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @page {{ size: A4; margin: 14mm; }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      padding: 0;
+      color: #111827;
+      font-family: Arial, Helvetica, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background: #fff;
+    }}
+    .pdf-document {{
+      font-size: 9.5pt;
+      line-height: 1.45;
+    }}
+    .pdf-title {{
+      font-size: 15pt;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: 0 0 12px 0;
+      color: #0f172a;
+    }}
+    table {{
+      width: 100%;
+      border-collapse: collapse;
+    }}
+    .block-table {{
+      margin-bottom: 14px;
+    }}
+    .block-table td {{
+      border: 0.5px solid #000;
+      padding: 7px 8px;
+      vertical-align: top;
+    }}
+    .label {{
+      width: 18%;
+      background: #e2e8f0;
+      font-weight: 700;
+    }}
+    .section-title {{
+      background: #e2e8f0;
+      font-weight: 700;
+      text-transform: uppercase;
+    }}
+    .section-body {{
+      padding: 8px 10px;
+    }}
+    .report-title {{
+      font-size: 11pt;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }}
+    .report-box {{
+      margin-bottom: 12px;
+    }}
+    .report-box table {{
+      font-size: 9pt;
+    }}
+    .report-box th, .report-box td {{
+      border: 0.5px solid #000;
+      padding: 6px 8px;
+    }}
+    .report-box thead th {{
+      background: #e2e8f0;
+      font-weight: 700;
+    }}
+    .report-box tbody tr:nth-child(even) td {{
+      background: #f8fafc;
+    }}
+    .conclusion p {{
+      margin: 0 0 8px 0;
+      text-align: justify;
+    }}
+  </style>
+</head>
+<body>
+  {body_html}
+</body>
+</html>"""
 SPA_INDEX = FRONTEND_DIST / "index.html"
 
 @asynccontextmanager
@@ -98,7 +255,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
     except Exception as exc:
         detail = str(exc)
         if 'Invalid login credentials' in detail:
-            detail = 'E-mail ou senha inválidos.'
+            detail = 'E-mail ou senha invÃ¡lidos.'
         return templates.TemplateResponse(request, "login.html", {"request": request, "error": detail})
 
     return RedirectResponse(url="/generate-report", status_code=303)
@@ -110,7 +267,7 @@ async def api_login(request: Request):
     email = payload.get("email")
     password = payload.get("password")
     if not email or not password:
-        raise HTTPException(status_code=400, detail="Email e senha são obrigatórios")
+        raise HTTPException(status_code=400, detail="Email e senha sÃ£o obrigatÃ³rios")
     try:
         await login_user(email, password, request)
     except HTTPException as exc:
@@ -118,7 +275,7 @@ async def api_login(request: Request):
     except Exception as exc:
         detail = str(exc)
         if 'Invalid login credentials' in detail:
-            detail = 'E-mail ou senha inválidos.'
+            detail = 'E-mail ou senha invÃ¡lidos.'
         raise HTTPException(status_code=401, detail=detail)
     return {"ok": True, "user": request.session.get("user")}
 
@@ -133,7 +290,7 @@ async def api_logout(request: Request):
 def api_user(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
     return {"user": user}
 
 
@@ -160,7 +317,7 @@ async def update_profile(request: Request, full_name: str = Form(""), profession
 
     allowed_genders = {"Masculino", "Feminino", "Outro"}
     if gender and gender not in allowed_genders:
-        raise HTTPException(status_code=400, detail="Gênero inválido")
+        raise HTTPException(status_code=400, detail="GÃªnero invÃ¡lido")
 
     client = get_authenticated_client(request)
     response = client.table("profiles").update({
@@ -186,7 +343,7 @@ async def update_profile(request: Request, full_name: str = Form(""), profession
 async def api_update_account(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
 
     payload = await request.json()
     full_name = (payload.get("full_name") or "").strip()
@@ -195,7 +352,7 @@ async def api_update_account(request: Request):
 
     allowed_genders = {"Masculino", "Feminino", "Outro"}
     if gender and gender not in allowed_genders:
-        raise HTTPException(status_code=400, detail="Gênero inválido")
+        raise HTTPException(status_code=400, detail="GÃªnero invÃ¡lido")
 
     client = get_authenticated_client(request)
     response = client.table("profiles").update({
@@ -226,11 +383,11 @@ async def generate_report(request: Request):
 async def api_patients(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
 
     client = get_authenticated_client(request)
     # select additional fields so frontend can display gender and contact and pre-fill edit form
-    response = client.table("patients").select("id, full_name, birth_date, gender, phone, email").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
+    response = client.table("patients").select("id, full_name, birth_date, gender, phone, email, responsavel").eq("psychologist_id", user["id"]).order("created_at", desc=True).execute()
     if getattr(response, "error", None):
         raise HTTPException(status_code=500, detail=str(response.error))
 
@@ -259,6 +416,7 @@ async def api_patients(request: Request):
             "gender": p.get("gender") or None,
             "phone": p.get("phone") or None,
             "email": p.get("email") or None,
+            "responsavel": p.get("responsavel") or None,
         })
     return patients
 
@@ -267,7 +425,7 @@ async def api_patients(request: Request):
 async def api_report_types(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
     return get_report_folders()
 
 
@@ -275,9 +433,9 @@ async def api_report_types(request: Request):
 async def api_report_fields(request: Request, report_name: str = ""):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
     if not report_name or report_name not in get_report_folders():
-        raise HTTPException(status_code=400, detail="Relatório inválido")
+        raise HTTPException(status_code=400, detail="RelatÃ³rio invÃ¡lido")
     return get_report_input_fields(report_name)
 
 
@@ -285,25 +443,25 @@ async def api_report_fields(request: Request, report_name: str = ""):
 async def create_report(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
 
     payload = await request.json()
     patient_id = payload.get("patient_id")
     report_name = payload.get("report_name")
     input_data = payload.get("input_data") or {}
     if not patient_id or not report_name:
-        raise HTTPException(status_code=400, detail="patient_id e report_name são obrigatórios")
+        raise HTTPException(status_code=400, detail="patient_id e report_name sÃ£o obrigatÃ³rios")
     report_folders = get_report_folders()
     if report_name not in report_folders:
-        raise HTTPException(status_code=400, detail="Relatório inválido")
+        raise HTTPException(status_code=400, detail="RelatÃ³rio invÃ¡lido")
 
     client = get_authenticated_client(request)
-    patient_resp = client.table("patients").select("id, full_name, birth_date").eq("psychologist_id", user["id"]).eq("id", patient_id).limit(1).execute()
+    patient_resp = client.table("patients").select("id, full_name, birth_date, responsavel").eq("psychologist_id", user["id"]).eq("id", patient_id).limit(1).execute()
     if getattr(patient_resp, "error", None):
         raise HTTPException(status_code=500, detail=str(patient_resp.error))
     raw_data = getattr(patient_resp, "data", []) or []
     if not raw_data:
-        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+        raise HTTPException(status_code=404, detail="Paciente nÃ£o encontrado")
     patient = raw_data[0]
 
     report_text = ""
@@ -323,7 +481,7 @@ async def create_report(request: Request):
             report_module = None
 
         if not report_module or not hasattr(report_module, 'build_report'):
-            raise HTTPException(status_code=400, detail="Relatório não suportado")
+            raise HTTPException(status_code=400, detail="RelatÃ³rio nÃ£o suportado")
 
         # Report modules are called without the DB client, so they cannot
         # resolve the patient's age themselves. Inject the patient's age so the
@@ -361,10 +519,6 @@ async def create_report(request: Request):
     return {"ok": True, "report_name": report_name, "patient_id": patient_id}
 
 
-class PDF(FPDF, fpdf_html.HTMLMixin):
-    pass
-
-
 async def build_report_html(client, patient, report_name: str, input_data: dict) -> str:
     report_text = ""
     if report_name == "TAC 2":
@@ -383,7 +537,7 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
             report_module = None
 
         if not report_module or not hasattr(report_module, 'build_report'):
-            raise HTTPException(status_code=400, detail="Relatório não suportado")
+            raise HTTPException(status_code=400, detail="RelatÃ³rio nÃ£o suportado")
 
         # Report modules are called without the DB client, so they cannot
         # resolve the patient's age themselves. Inject the patient's age so the
@@ -398,7 +552,7 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
             report_text = report_output
 
     if not report_text:
-        raise HTTPException(status_code=400, detail="Relatório vazio")
+        raise HTTPException(status_code=400, detail="RelatÃ³rio vazio")
 
     from app.gemini_service import generate_interpretation
     table_match = re.search(r"<table.*?>.*?</table>", report_text, re.DOTALL | re.IGNORECASE)
@@ -420,72 +574,121 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
     return report_text
 
 
-def build_combined_pdf(report_sections: list[str]) -> bytes:
-    pdf = PDF(orientation='P', unit='mm', format='A4')
-    pdf.set_margins(left=15, top=15, right=15)
-    pdf.set_auto_page_break(auto=True, margin=15)
-    for section_html in report_sections:
-        pdf.add_page()
-        pdf.set_font('Arial', size=11)
+def _render_pdf_sync(html_page: str) -> bytes:
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
         try:
-            pdf.write_html(section_html)
-        except Exception:
-            text_only = re.sub(r'<[^>]+>', '', section_html)
-            pdf.multi_cell(0, 8, text_only)
-    output = pdf.output(dest='S')
-    if isinstance(output, str):
-        output = output.encode('latin-1', 'replace')
-    return output
+            page = browser.new_page(viewport={"width": 1240, "height": 1754})
+            page.set_content(html_page, wait_until="networkidle")
+            return page.pdf(
+                format="A4",
+                print_background=True,
+                margin={"top": "14mm", "right": "14mm", "bottom": "14mm", "left": "14mm"},
+            )
+        finally:
+            browser.close()
 
+
+async def build_combined_pdf(report_sections: list[str]) -> bytes:
+    html_page = _build_pdf_page_html("".join(report_sections))
+    return await asyncio.to_thread(_render_pdf_sync, html_page)
+
+
+async def _build_conclusion_html(patient: dict, report_results: list, patient_description: str, user_ia_direction_conclusion: str) -> str:
+    from app.conclusao_service import generate_conclusion
+
+    conclusion_html = await generate_conclusion(
+        birth_date=patient.get('birth_date'),
+        report_results=report_results,
+        patient_description=patient_description,
+        user_ia_direction_conclusion=user_ia_direction_conclusion,
+    )
+    return (
+        '<table class="block-table" cellpadding="0" cellspacing="0">'
+        '<tr>'
+        '<td class="section-title">Síntese dos resultados</td>'
+        '</tr>'
+        '<tr>'
+        f'<td class="section-body conclusion">{conclusion_html}</td>'
+        '</tr>'
+        '</table>'
+    )
+
+
+def _wrap_report_html(report_name: str, report_html: str) -> str:
+    return (
+        '<table class="block-table report-box" cellpadding="0" cellspacing="0">'
+        '<tr>'
+        f'<td class="section-title">{escape(report_name or "Relatório")}</td>'
+        '</tr>'
+        '<tr>'
+        f'<td class="section-body">{report_html}</td>'
+        '</tr>'
+        '</table>'
+    )
 
 @app.post('/api/reports/pdf')
 async def create_reports_pdf(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail='Não autenticado')
+        raise HTTPException(status_code=401, detail='NÃ£o autenticado')
 
     payload = await request.json()
     patient_id = payload.get('patient_id')
     report_entries = payload.get('report_entries') or []
+    patient_description = payload.get('patient_description') or ''
+    user_ia_direction_conclusion = payload.get('user_ia_direction_conclusion') or ''
     if not patient_id or not isinstance(report_entries, list) or not report_entries:
-        raise HTTPException(status_code=400, detail='patient_id e report_entries são obrigatórios')
+        raise HTTPException(status_code=400, detail='patient_id e report_entries sÃ£o obrigatÃ³rios')
 
     report_folders = get_report_folders()
 
     client = get_authenticated_client(request)
-    patient_resp = client.table('patients').select('id, full_name, birth_date').eq('psychologist_id', user['id']).eq('id', patient_id).limit(1).execute()
+    patient_resp = client.table('patients').select('id, full_name, birth_date, gender, responsavel').eq('psychologist_id', user['id']).eq('id', patient_id).limit(1).execute()
     if getattr(patient_resp, 'error', None):
         raise HTTPException(status_code=500, detail=str(patient_resp.error))
     raw_data = getattr(patient_resp, 'data', []) or []
     if not raw_data:
-        raise HTTPException(status_code=404, detail='Paciente não encontrado')
+        raise HTTPException(status_code=404, detail='Paciente nÃ£o encontrado')
     patient = raw_data[0]
 
+    profile_resp = client.table('profiles').select('id, profession').eq('id', user['id']).limit(1).execute()
+    if getattr(profile_resp, 'error', None):
+        raise HTTPException(status_code=500, detail=str(profile_resp.error))
+    profile_rows = getattr(profile_resp, 'data', []) or []
+    profile = profile_rows[0] if profile_rows else {}
+
     report_sections = []
+    report_results = []
     for entry in report_entries:
         report_name = entry.get('report_name')
         input_data = entry.get('input_data') or {}
         if not report_name or report_name not in report_folders:
-            raise HTTPException(status_code=400, detail=f"Relatório inválido: {report_name}")
+            raise HTTPException(status_code=400, detail=f"RelatÃ³rio invÃ¡lido: {report_name}")
         report_html = await build_report_html(client, patient, report_name, input_data)
-        report_sections.append(report_html)
+        report_sections.append(_wrap_report_html(report_name, report_html))
+        report_results.append({'report_name': report_name, 'results_html': report_html})
 
-    pdf_content = build_combined_pdf(report_sections)
-    return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'attachment; filename="relatorios_combinados.pdf"'})
+    header_html = _build_pdf_header_html(patient, profile)
+    description_html = _build_patient_description_html(patient_description)
+    conclusion_html = await _build_conclusion_html(patient, report_results, patient_description, user_ia_direction_conclusion)
+    body_html = ''.join(report_sections)
+    pdf_content = await build_combined_pdf([header_html + description_html + body_html + conclusion_html])
+    return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'inline; filename="Relat\u00f3rio.pdf"'})
 
 
 @app.post('/api/conclusion')
 async def api_conclusion(request: Request):
     """
-    Gera a conclusão final do relatório PDF usando conclusao_service.py.
+    Gera a conclusÃ£o final do relatÃ³rio PDF usando conclusao_service.py.
 
     Recebe do frontend a idade (via data de nascimento do paciente), os
-    resultados de cada relatório selecionado, a descrição do paciente e a
-    variável "user_ia_direction_conclusion".
+    resultados de cada relatÃ³rio selecionado, a descriÃ§Ã£o do paciente e a
+    variÃ¡vel "user_ia_direction_conclusion".
     """
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail='Não autenticado')
+        raise HTTPException(status_code=401, detail='NÃ£o autenticado')
 
     payload = await request.json()
     patient_id = payload.get('patient_id')
@@ -493,7 +696,7 @@ async def api_conclusion(request: Request):
     patient_description = payload.get('patient_description') or ''
     user_ia_direction_conclusion = payload.get('user_ia_direction_conclusion') or ''
     if not patient_id:
-        raise HTTPException(status_code=400, detail='patient_id é obrigatório')
+        raise HTTPException(status_code=400, detail='patient_id Ã© obrigatÃ³rio')
 
     client = get_authenticated_client(request)
     patient_resp = client.table('patients').select('id, full_name, birth_date').eq('psychologist_id', user['id']).eq('id', patient_id).limit(1).execute()
@@ -501,7 +704,7 @@ async def api_conclusion(request: Request):
         raise HTTPException(status_code=500, detail=str(patient_resp.error))
     raw_data = getattr(patient_resp, 'data', []) or []
     if not raw_data:
-        raise HTTPException(status_code=404, detail='Paciente não encontrado')
+        raise HTTPException(status_code=404, detail='Paciente nÃ£o encontrado')
     patient = raw_data[0]
 
     from app.conclusao_service import generate_conclusion
@@ -528,15 +731,15 @@ async def patients(request: Request):
 async def update_patient(patient_id: str, request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
 
     if not request.session.get("access_token"):
-        raise HTTPException(status_code=401, detail="Usuário não autenticado")
+        raise HTTPException(status_code=401, detail="UsuÃ¡rio nÃ£o autenticado")
 
     payload = await request.json()
     full_name = (payload.get("full_name") or "").strip()
     if not full_name:
-        raise HTTPException(status_code=400, detail="Nome completo é obrigatório")
+        raise HTTPException(status_code=400, detail="Nome completo Ã© obrigatÃ³rio")
 
     def parse_birth_date(val):
         if not val:
@@ -566,25 +769,27 @@ async def update_patient(patient_id: str, request: Request):
 
     birth_date = parse_birth_date(payload.get("birth_date") or None)
     if payload.get("birth_date") and birth_date is None:
-        raise HTTPException(status_code=400, detail="Data de nascimento inválida. Use o formato dd/mm/aaaa.")
+        raise HTTPException(status_code=400, detail="Data de nascimento invÃ¡lida. Use o formato dd/mm/aaaa.")
     if birth_date:
         from datetime import date, datetime
         bd = datetime.fromisoformat(birth_date).date()
         age = date.today().year - bd.year - ((date.today().month, date.today().day) < (bd.month, bd.day))
         if age < 0:
-            raise HTTPException(status_code=400, detail="Data de nascimento não pode estar no futuro.")
+            raise HTTPException(status_code=400, detail="Data de nascimento nÃ£o pode estar no futuro.")
         if age > 120:
-            raise HTTPException(status_code=400, detail="A idade não pode ser maior que 120 anos.")
+            raise HTTPException(status_code=400, detail="A idade nÃ£o pode ser maior que 120 anos.")
     phone = normalize_phone(payload.get("phone") or None)
     gender = payload.get("gender") or None
+    responsavel = (payload.get("responsavel") or "").strip() or None
     allowed_genders = {"Masculino", "Feminino", "Outro"}
     if gender and gender not in allowed_genders:
-        raise HTTPException(status_code=400, detail="Gênero inválido")
+        raise HTTPException(status_code=400, detail="GÃªnero invÃ¡lido")
 
     data = {
         "full_name": full_name,
         "birth_date": birth_date,
         "gender": gender,
+        "responsavel": responsavel,
         "phone": phone,
         "email": payload.get("email") or None,
     }
@@ -596,7 +801,7 @@ async def update_patient(patient_id: str, request: Request):
 
     updated_data = getattr(response, "data", []) or []
     if not updated_data:
-        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+        raise HTTPException(status_code=404, detail="Paciente nÃ£o encontrado")
 
     return {"ok": True, "patient": updated_data[0]}
 
@@ -605,10 +810,10 @@ async def update_patient(patient_id: str, request: Request):
 async def delete_patient(patient_id: str, request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
 
     if not request.session.get("access_token"):
-        raise HTTPException(status_code=401, detail="Usuário não autenticado")
+        raise HTTPException(status_code=401, detail="UsuÃ¡rio nÃ£o autenticado")
 
     client = get_authenticated_client(request)
     response = client.table("patients").delete().eq("id", patient_id).eq("psychologist_id", user["id"]).execute()
@@ -617,7 +822,7 @@ async def delete_patient(patient_id: str, request: Request):
 
     deleted = getattr(response, "data", None) or []
     if not deleted:
-        raise HTTPException(status_code=404, detail="Paciente não encontrado")
+        raise HTTPException(status_code=404, detail="Paciente nÃ£o encontrado")
 
     return {"ok": True, "deleted_id": patient_id}
 
@@ -626,15 +831,15 @@ async def delete_patient(patient_id: str, request: Request):
 async def create_patient(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
 
     if not request.session.get("access_token"):
-        raise HTTPException(status_code=401, detail="Usuário não autenticado")
+        raise HTTPException(status_code=401, detail="UsuÃ¡rio nÃ£o autenticado")
 
     payload = await request.json()
     full_name = (payload.get("full_name") or "").strip()
     if not full_name:
-        raise HTTPException(status_code=400, detail="Nome completo é obrigatório")
+        raise HTTPException(status_code=400, detail="Nome completo Ã© obrigatÃ³rio")
     # check duplicate patient name for this psychologist
     client = get_authenticated_client(request)
     try:
@@ -644,7 +849,7 @@ async def create_patient(request: Request):
 
     existing = getattr(dup_check, "data", None) or []
     if isinstance(existing, list) and existing:
-        raise HTTPException(status_code=400, detail="Já existe um paciente com esse nome registrado")
+        raise HTTPException(status_code=400, detail="JÃ¡ existe um paciente com esse nome registrado")
 
     # normalize and convert types according to supabase schema
     def parse_birth_date(val):
@@ -680,26 +885,28 @@ async def create_patient(request: Request):
 
     birth_date = parse_birth_date(payload.get("birth_date") or None)
     if payload.get("birth_date") and birth_date is None:
-        raise HTTPException(status_code=400, detail="Data de nascimento inválida. Use o formato dd/mm/aaaa.")
+        raise HTTPException(status_code=400, detail="Data de nascimento invÃ¡lida. Use o formato dd/mm/aaaa.")
     if birth_date:
         from datetime import date, datetime
         bd = datetime.fromisoformat(birth_date).date()
         age = date.today().year - bd.year - ((date.today().month, date.today().day) < (bd.month, bd.day))
         if age < 0:
-            raise HTTPException(status_code=400, detail="Data de nascimento não pode estar no futuro.")
+            raise HTTPException(status_code=400, detail="Data de nascimento nÃ£o pode estar no futuro.")
         if age > 120:
-            raise HTTPException(status_code=400, detail="A idade não pode ser maior que 120 anos.")
+            raise HTTPException(status_code=400, detail="A idade nÃ£o pode ser maior que 120 anos.")
     phone = normalize_phone(payload.get("phone") or None)
     gender = payload.get("gender") or None
+    responsavel = (payload.get("responsavel") or "").strip() or None
     allowed_genders = {"Masculino", "Feminino", "Outro"}
     if gender and gender not in allowed_genders:
-        raise HTTPException(status_code=400, detail="Gênero inválido")
+        raise HTTPException(status_code=400, detail="GÃªnero invÃ¡lido")
 
     data = {
         "psychologist_id": user["id"],
         "full_name": full_name,
         "birth_date": birth_date,
         "gender": gender,
+        "responsavel": responsavel,
         "phone": phone,
         "email": payload.get("email") or None,
     }
@@ -729,17 +936,17 @@ async def chat_gemini_page(request: Request):
 async def api_chat_gemini(request: Request):
     user = get_user_from_session(request)
     if not user:
-        raise HTTPException(status_code=401, detail="Não autenticado")
+        raise HTTPException(status_code=401, detail="NÃ£o autenticado")
 
     payload = await request.json()
     contents = payload.get("contents")
     if not contents:
-        raise HTTPException(status_code=400, detail="Histórico de mensagens é obrigatório")
+        raise HTTPException(status_code=400, detail="HistÃ³rico de mensagens Ã© obrigatÃ³rio")
 
     api_key = os.getenv("GEMINI_API_KEY")
     model = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     if not api_key:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY não configurada no servidor")
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY nÃ£o configurada no servidor")
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
@@ -764,8 +971,11 @@ async def api_chat_gemini(request: Request):
 async def spa_fallback(path: str):
     """Fallback do SPA: serve o index.html para rotas do cliente (React Router).
 
-    /api, /static e /assets têm rotas próprias; se chegarem aqui, devolvem 404.
+    /api, /static e /assets tÃªm rotas prÃ³prias; se chegarem aqui, devolvem 404.
     """
     if path.startswith(("api/", "static/", "assets/")):
         raise HTTPException(status_code=404, detail="Not found")
     return serve_spa()
+
+
+

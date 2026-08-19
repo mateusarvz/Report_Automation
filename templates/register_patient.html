@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
@@ -15,7 +15,7 @@
                     <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
                 </div>
                 <nav>
-                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova AvaliaÃ§Ã£o</a>
                     <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
                     <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
                     <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
@@ -26,29 +26,29 @@
         <main class="content">
             <div class="topbar">
                 <section class="page-header">
-                    <img class="page-icon-image" src="/static/assets/icons/novo-paciente.png" alt="Ícone de Novo Paciente" />
+                    <img class="page-icon-image" src="/static/assets/icons/novo-paciente.png" alt="Ãcone de Novo Paciente" />
                     <div>
                         <h1>Cadastrar Paciente</h1>
                     </div>
                 </section>
                 <div class="user-menu" id="user-menu">
                     <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
-                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ãcone de usuÃ¡rio" />
                         <div class="user-menu-text">
                             <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
                             {% set subtitle = '' %}
-                            {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
-                                {% set subtitle = 'Psicólogo' %}
-                            {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
-                                {% set subtitle = 'Psicóloga' %}
-                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
-                                {% set subtitle = 'Neuropsicólogo' %}
-                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
-                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% if user.profession == 'PsicÃ³logo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'PsicÃ³logo' %}
+                            {% elif user.profession == 'PsicÃ³logo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'PsicÃ³loga' %}
+                            {% elif user.profession == 'NeuropsicÃ³logo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'NeuropsicÃ³logo' %}
+                            {% elif user.profession == 'NeuropsicÃ³logo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'NeuropsicÃ³loga' %}
                             {% endif %}
                             {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
                         </div>
-                        <span class="user-menu-caret">▾</span>
+                        <span class="user-menu-caret">â–¾</span>
                     </button>
                     <div class="user-menu-dropdown" id="user-menu-dropdown">
                         <a href="/logout">Sair</a>
@@ -67,7 +67,7 @@
                             <input id="birth_date" name="birth_date" type="text" placeholder="dd/mm/aaaa" />
                         </div>
                         <div class="field-col">
-                            <label for="gender">Gênero</label>
+                            <label for="gender">GÃªnero</label>
                             <select id="gender" name="gender">
                                         <option value="">Selecione</option>
                                         <option value="Feminino">Feminino</option>
@@ -78,13 +78,17 @@
                     </div>
                     <div class="form-row two-cols">
                         <div class="field-col">
-                            <label for="phone">Número do responsável</label>
+                            <label for="phone">NÃºmero do responsÃ¡vel</label>
                             <input id="phone" name="phone" type="tel" placeholder="(99) 99999-9999" />
                         </div>
                         <div class="field-col">
-                            <label for="email">Email do responsável</label>
+                            <label for="email">Email do responsÃ¡vel</label>
                             <input id="email" name="email" type="email" placeholder="responsavel@email.com" />
                         </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="responsavel">ResponsÃ¡vel</label>
+                        <input id="responsavel" name="responsavel" type="text" placeholder="Nome do responsÃ¡vel" />
                     </div>
                     <div class="form-actions">
                         <button class="button primary" type="submit">Cadastrar</button>
@@ -102,7 +106,7 @@
                                     <tr>
                                         <th>Nome</th>
                                         <th>Idade</th>
-                                        <th>Número do responsável</th>
+                                        <th>NÃºmero do responsÃ¡vel</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -172,7 +176,7 @@
                 email: form.email.value.trim() || null,
             };
             if (!data.full_name) {
-                message.textContent = 'Nome completo é obrigatório.';
+                message.textContent = 'Nome completo Ã© obrigatÃ³rio.';
                 return;
             }
             try {
@@ -195,8 +199,8 @@
                     if (responseBody) {
                         errText = responseBody.error || responseBody.detail || responseBody.message || JSON.stringify(responseBody);
                     }
-                    if (res.status === 400 && (responseBody && (responseBody.detail || '').includes('Já existe um paciente')) ) {
-                        errText = 'Já existe um paciente com esse nome registrado';
+                    if (res.status === 400 && (responseBody && (responseBody.detail || '').includes('JÃ¡ existe um paciente')) ) {
+                        errText = 'JÃ¡ existe um paciente com esse nome registrado';
                     }
                     throw new Error(errText);
                 }
@@ -233,3 +237,4 @@
     </script>
 </body>
 </html>
+

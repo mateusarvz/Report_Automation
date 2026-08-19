@@ -97,6 +97,7 @@ create table if not exists public.patients (
     id uuid primary key default gen_random_uuid(),
     psychologist_id uuid not null references public.profiles(id) on delete cascade,
     full_name text not null,
+    responsavel text,
     birth_date date,
     gender text,
     phone text,
@@ -106,6 +107,9 @@ create table if not exists public.patients (
 );
 
 alter table public.patients enable row level security;
+
+alter table public.patients
+    add column if not exists responsavel text;
 
 drop policy if exists "patients_select_own" on public.patients;
 drop policy if exists "patients_insert_own" on public.patients;
@@ -213,3 +217,4 @@ begin
     where id = p_user_id;
 end;
 $$;
+

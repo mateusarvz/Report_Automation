@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import { apiGet, apiPatch, apiPost, apiDelete } from './api'
-import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.js'
 
 const reportRanges = {
   'TAC 2': {
@@ -57,13 +56,14 @@ function GenerateReportProvider({ children }) {
   const [selectedReports, setSelectedReports] = useState([])
   const [loadedReports, setLoadedReports] = useState([])
   const [formData, setFormData] = useState({})
-  const [resultHtml, setResultHtml] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [invalidFields, setInvalidFields] = useState({})
   const [patientDescription, setPatientDescription] = useState('')
   const [userIaDirectionConclusion, setUserIaDirectionConclusion] = useState('')
+  const [reportPdfUrl, setReportPdfUrl] = useState('')
+  const [reportPdfBlob, setReportPdfBlob] = useState(null)
 
   const value = {
     patients, setPatients,
@@ -72,13 +72,14 @@ function GenerateReportProvider({ children }) {
     selectedReports, setSelectedReports,
     loadedReports, setLoadedReports,
     formData, setFormData,
-    resultHtml, setResultHtml,
     message, setMessage,
     loading, setLoading,
     generating, setGenerating,
     invalidFields, setInvalidFields,
     patientDescription, setPatientDescription,
     userIaDirectionConclusion, setUserIaDirectionConclusion,
+    reportPdfUrl, setReportPdfUrl,
+    reportPdfBlob, setReportPdfBlob,
   }
 
   return <GenerateReportContext.Provider value={value}>{children}</GenerateReportContext.Provider>
@@ -277,23 +278,16 @@ function GenerateReportPage() {
     selectedReports, setSelectedReports,
     loadedReports, setLoadedReports,
     formData, setFormData,
-    resultHtml, setResultHtml,
     message, setMessage,
     loading, setLoading,
     generating, setGenerating,
     invalidFields, setInvalidFields,
     patientDescription, setPatientDescription,
     userIaDirectionConclusion, setUserIaDirectionConclusion,
+    reportPdfUrl, setReportPdfUrl,
+    reportPdfBlob, setReportPdfBlob,
   } = useContext(GenerateReportContext)
   const reportPreviewRef = useRef(null)
-
-  const escapeHtml = (value) =>
-    String(value == null ? '' : value)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
 
   const validateField = (reportName, name, value) => {
     const range = reportRanges[reportName] && reportRanges[reportName][name]
@@ -312,6 +306,14 @@ function GenerateReportPage() {
       .then(setReportTypes)
       .catch((err) => setMessage(err.message))
   }, [])
+
+  useEffect(() => {
+    return () => {
+      if (reportPdfUrl) {
+        URL.revokeObjectURL(reportPdfUrl)
+      }
+    }
+  }, [reportPdfUrl])
 
   const loadSelectedReports = async () => {
     if (!selectedReports.length) {
@@ -436,7 +438,8 @@ function GenerateReportPage() {
 
   const handleGenerate = async () => {
     setMessage('')
-    setResultHtml('')
+    setReportPdfUrl('')
+    setReportPdfBlob(null)
     if (!selectedPatient || !loadedReports.length) {
       setMessage('Selecione paciente e carregue pelo menos um relatório antes de gerar.')
       return
@@ -446,85 +449,31 @@ function GenerateReportPage() {
     }
     setGenerating(true)
     try {
-      const patient = patients.find((p) => String(p.id) === String(selectedPatient))
-
-      // 1) Professional patient header (always present)
-      const patientHeader = `
-        <section class="pdf-patient-header">
-          <div class="pdf-header-title">Relatório de Avaliação Neuropsicológica</div>
-          <table class="pdf-patient-table">
-            <tbody>
-              <tr>
-                <th>Paciente</th>
-                <td>${escapeHtml(patient?.full_name || '-')}</td>
-                <th>Idade</th>
-                <td>${escapeHtml(patient?.age || '-')} anos</td>
-              </tr>
-              <tr>
-                <th>Data de nascimento</th>
-                <td>${escapeHtml(patient?.birth_date || '-')}</td>
-                <th>Gênero</th>
-                <td>${escapeHtml(patient?.gender || '-')}</td>
-              </tr>
-            </tbody>
-          </table>
-        </section>
-      `
-
-      // 2) Patient description written by the user (only if provided)
-      const descriptionHtml = patientDescription.trim()
-        ? `
-          <section class="pdf-patient-description">
-            <h2>Descrição do paciente</h2>
-            <p>${escapeHtml(patientDescription).replace(/\n/g, '<br />')}</p>
-          </section>
-        `
-        : ''
-
-      // 3) Report results
-      const reportParts = []
-      for (const report of loadedReports) {
-        const response = await fetch('/api/reports', {
+      const response = await fetch('/api/reports/pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             patient_id: selectedPatient,
-            report_name: report.reportName,
-            input_data: formData[report.reportName] || {},
-          }),
-        })
-        if (!response.ok) {
-          const errorText = await response.text()
-          throw new Error(errorText || `Erro ao gerar relatório ${report.reportName}`)
-        }
-        const html = await response.text()
-        reportParts.push(`<section class="report-result"><h2>${report.reportName}</h2>${html}</section>`)
-      }
-
-      // 4) Conclusion generated server-side (at the end of the PDF)
-      try {
-        const conclusionResp = await fetch('/api/conclusion', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            patient_id: selectedPatient,
-            report_results: loadedReports.map((report, index) => ({
+            report_entries: loadedReports.map((report) => ({
               report_name: report.reportName,
-              results_html: reportParts[index] || '',
+              input_data: formData[report.reportName] || {},
             })),
             patient_description: patientDescription,
             user_ia_direction_conclusion: userIaDirectionConclusion,
           }),
         })
-        const conclusionBody = await conclusionResp.text()
-        reportParts.push(`<section class="report-result conclusion-section"><h2 class="conclusion-title">Síntese dos resultados</h2>${conclusionBody}</section>`)
-      } catch (err) {
-        // A conclusão é opcional: se falhar, o preview dos relatórios ainda é exibido
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(errorText || 'Erro ao gerar PDF do relatório')
       }
-
-      setResultHtml(`<div class="pdf-document">${patientHeader}${descriptionHtml}${reportParts.join('')}</div>`)
+      const blob = await response.blob()
+      const nextUrl = URL.createObjectURL(blob)
+      if (reportPdfUrl) {
+        URL.revokeObjectURL(reportPdfUrl)
+      }
+      setReportPdfBlob(blob)
+      setReportPdfUrl(nextUrl)
     } catch (err) {
       setMessage(err.message)
     } finally {
@@ -540,24 +489,21 @@ function GenerateReportPage() {
     if (!validateInputs()) {
       return
     }
-    if (!reportPreviewRef.current) {
+    if (!reportPdfBlob) {
       setMessage('Não foi possível gerar o PDF. Tente gerar o relatório novamente.')
       return
     }
 
     setLoading(true)
     try {
-      // scale relative to device pixel ratio for sharper output
-      const dpr = Math.min(window.devicePixelRatio || 1, 2.5)
-      const options = {
-        margin: [10, 10, 10, 10],
-        filename: 'relatorio.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: Math.max(1.5, dpr * 1.5), useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] },
-      }
-      await html2pdf().set(options).from(reportPreviewRef.current).save()
+      const url = URL.createObjectURL(reportPdfBlob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'relatorio.pdf'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
     } catch (err) {
       setMessage(err?.message || 'Erro ao gerar PDF do relatório')
     } finally {
@@ -567,10 +513,10 @@ function GenerateReportPage() {
 
   // Auto-scroll to the start of the generated report preview
   useEffect(() => {
-    if (resultHtml && reportPreviewRef.current) {
+    if (reportPdfUrl && reportPreviewRef.current) {
       reportPreviewRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-  }, [resultHtml])
+  }, [reportPdfUrl])
 
   return (
     <div className="generate-page">
@@ -698,12 +644,16 @@ function GenerateReportPage() {
       )}
 
       {message && <p className="message">{message}</p>}
-      {resultHtml && (
+      {reportPdfUrl && (
         <div className="card pdf-preview" style={{ marginTop: 20 }} ref={reportPreviewRef}>
-          <div className="pdf-inner" dangerouslySetInnerHTML={{ __html: resultHtml }} />
+          <iframe
+            title="Prévia do relatório"
+            src={reportPdfUrl}
+            style={{ width: '100%', minHeight: '1100px', border: '0', background: '#fff' }}
+          />
         </div>
       )}
-      {resultHtml && (
+      {reportPdfUrl && (
         <div className="download-block" style={{ marginTop: 16 }}>
           <button type="button" className="button" onClick={handleDownloadPdf} disabled={loading}>
             Baixar
@@ -744,6 +694,7 @@ function PatientsPage() {
       full_name: patient.full_name,
       birth_date: patient.birth_date || '',
       gender: patient.gender || '',
+      responsavel: patient.responsavel || '',
       phone: patient.phone || '',
       email: patient.email || '',
     })
@@ -848,6 +799,10 @@ function PatientsPage() {
               </div>
             </div>
             <div className="form-row">
+              <label>Responsável</label>
+              <input value={editForm.responsavel || ''} onChange={(event) => handleChange('responsavel', event.target.value)} />
+            </div>
+            <div className="form-row">
               <button type="submit" className="button">
                 Salvar
               </button>
@@ -865,7 +820,7 @@ function PatientsPage() {
 
 function RegisterPatientPage() {
   const [patients, setPatients] = useState([])
-  const [form, setForm] = useState({ full_name: '', birth_date: '', gender: '', phone: '', email: '' })
+  const [form, setForm] = useState({ full_name: '', birth_date: '', gender: '', responsavel: '', phone: '', email: '' })
   const [message, setMessage] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
 
@@ -912,7 +867,7 @@ function RegisterPatientPage() {
     try {
       await apiPost('/api/patients', form)
       setMessage('Paciente cadastrado com sucesso.')
-      setForm({ full_name: '', birth_date: '', gender: '', phone: '', email: '' })
+      setForm({ full_name: '', birth_date: '', gender: '', responsavel: '', phone: '', email: '' })
       loadPatients()
     } catch (err) {
       setMessage(err.message)
@@ -951,9 +906,9 @@ function RegisterPatientPage() {
                 <option value="Feminino">Feminino</option>
                 <option value="Masculino">Masculino</option>
                 <option value="Outro">Outro</option>
-              </select>
+                </select>
+              </div>
             </div>
-          </div>
           <div className="grid-two">
             <div className="form-row">
               <label>Telefone</label>
@@ -963,6 +918,10 @@ function RegisterPatientPage() {
               <label>Email</label>
               <input type="email" value={form.email} onChange={(event) => handleFieldChange('email', event.target.value)} />
             </div>
+          </div>
+          <div className="form-row">
+            <label>Responsável</label>
+            <input value={form.responsavel} onChange={(event) => handleFieldChange('responsavel', event.target.value)} />
           </div>
           <button type="submit" className="button">
             Cadastrar

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
@@ -15,7 +15,7 @@
                     <div class="brand"><span class="brand-cogni">Cogni</span><span class="brand-reports">Reports</span></div>
                 </div>
                 <nav>
-                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova Avaliação</a>
+                    <a href="/generate-report" class="{{ 'active' if current_path == '/generate-report' else '' }}">Nova AvaliaÃ§Ã£o</a>
                     <a href="/register-patient" class="{{ 'active' if current_path == '/register-patient' else '' }}">Novo Paciente</a>
                     <a href="/account" class="{{ 'active' if current_path == '/account' else '' }}">Perfil</a>
                     <a href="/patients" class="{{ 'active' if current_path == '/patients' else '' }}">Pacientes</a>
@@ -26,29 +26,29 @@
         <main class="content">
             <div class="topbar">
                 <section class="page-header">
-                    <img class="page-icon-image" src="/static/assets/icons/dados-pacientes.png" alt="Ícone de Dados dos Pacientes" />
+                    <img class="page-icon-image" src="/static/assets/icons/dados-pacientes.png" alt="Ãcone de Dados dos Pacientes" />
                     <div>
                         <h1>Dados dos Pacientes</h1>
                     </div>
                 </section>
                 <div class="user-menu" id="user-menu">
                     <button class="user-menu-button" type="button" id="user-menu-toggle" aria-expanded="false">
-                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ícone de usuário" />
+                        <img class="user-menu-icon" src="/static/assets/icons/usuario_user.png" alt="Ãcone de usuÃ¡rio" />
                         <div class="user-menu-text">
                             <span class="user-menu-name">{{ user_display_name or user.full_name or user.email or 'Conta logada' }}</span>
                             {% set subtitle = '' %}
-                            {% if user.profession == 'Psicólogo(a)' and user.gender == 'Masculino' %}
-                                {% set subtitle = 'Psicólogo' %}
-                            {% elif user.profession == 'Psicólogo(a)' and user.gender == 'Feminino' %}
-                                {% set subtitle = 'Psicóloga' %}
-                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Masculino' %}
-                                {% set subtitle = 'Neuropsicólogo' %}
-                            {% elif user.profession == 'Neuropsicólogo(a)' and user.gender == 'Feminino' %}
-                                {% set subtitle = 'Neuropsicóloga' %}
+                            {% if user.profession == 'PsicÃ³logo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'PsicÃ³logo' %}
+                            {% elif user.profession == 'PsicÃ³logo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'PsicÃ³loga' %}
+                            {% elif user.profession == 'NeuropsicÃ³logo(a)' and user.gender == 'Masculino' %}
+                                {% set subtitle = 'NeuropsicÃ³logo' %}
+                            {% elif user.profession == 'NeuropsicÃ³logo(a)' and user.gender == 'Feminino' %}
+                                {% set subtitle = 'NeuropsicÃ³loga' %}
                             {% endif %}
                             {% if subtitle %}<span class="user-menu-subtitle">{{ subtitle }}</span>{% endif %}
                         </div>
-                        <span class="user-menu-caret">▾</span>
+                        <span class="user-menu-caret">â–¾</span>
                     </button>
                     <div class="user-menu-dropdown" id="user-menu-dropdown">
                         <a href="/logout">Sair</a>
@@ -63,10 +63,10 @@
                     <div class="card-item patient-card" data-patient-id="{{ p.id }}">
                         <div class="patient-info-row"><strong>Nome</strong><span>{{ p.full_name }}</span></div>
                         <div class="patient-info-row"><strong>Idade</strong><span>{{ p.age }}</span></div>
-                        <div class="patient-info-row"><strong>Gênero</strong><span>{{ p.gender }}</span></div>
+                        <div class="patient-info-row"><strong>GÃªnero</strong><span>{{ p.gender }}</span></div>
                         <div class="patient-info-row"><strong>Data de nascimento</strong><span>{{ p.birth_date }}</span></div>
-                        <div class="patient-info-row"><strong>Email do responsável</strong><span>{{ p.email }}</span></div>
-                        <div class="patient-info-row"><strong>Número do responsável</strong><span>{{ p.phone }}</span></div>
+                        <div class="patient-info-row"><strong>Email do responsÃ¡vel</strong><span>{{ p.email }}</span></div>
+                        <div class="patient-info-row"><strong>NÃºmero do responsÃ¡vel</strong><span>{{ p.phone }}</span></div>
                         <button class="button secondary edit-patient-button" type="button">Alterar dados do paciente</button>
                         <form class="patient-edit-form" data-patient-id="{{ p.id }}" hidden>
                             <div class="form-row">
@@ -75,7 +75,7 @@
                             </div>
                             <div class="form-row two-cols">
                                 <div class="field-col">
-                                    <label>Gênero</label>
+                                    <label>GÃªnero</label>
                                     <select name="gender">
                                         <option value="">Selecione</option>
                                         <option value="Feminino" {% if p.gender == 'Feminino' %}selected{% endif %}>Feminino</option>
@@ -90,13 +90,17 @@
                             </div>
                             <div class="form-row two-cols">
                                 <div class="field-col">
-                                    <label>Email do responsável</label>
+                                    <label>Email do responsÃ¡vel</label>
                                     <input name="email" type="email" value="{{ p.email }}" />
                                 </div>
                                 <div class="field-col">
-                                    <label>Número do responsável</label>
+                                    <label>NÃºmero do responsÃ¡vel</label>
                                     <input name="phone" type="tel" value="{{ p.phone }}" />
                                 </div>
+                            </div>
+                            <div class="form-row">
+                                <label>ResponsÃ¡vel</label>
+                                <input name="responsavel" type="text" value="{{ p.responsavel or '' }}" />
                             </div>
                             <div class="form-actions">
                                 <button class="button primary" type="submit">Salvar</button>
@@ -198,7 +202,7 @@
                 email: form.email.value.trim() || null,
             };
             if (!payload.full_name) {
-                if (message) message.textContent = 'Nome completo é obrigatório.';
+                if (message) message.textContent = 'Nome completo Ã© obrigatÃ³rio.';
                 return;
             }
 
@@ -263,3 +267,4 @@
     </script>
 </body>
 </html>
+

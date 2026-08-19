@@ -104,7 +104,7 @@ def _build_prompt(
         "naturais para dar ritmo à leitura. Evite começar parágrafos sempre da mesma forma e evite "
         "repetir as mesmas estruturas; o texto deve ser coeso, envolvente e fluido, porém sempre com "
         "tom formal e profissional.\n"
-        "Use de 100 a 600 palavras.\n"
+        "Use de 10 a 20 palavras.\n"
 
         "NÃO FAÇA O SEGUINTE:\n"
         "Não detalhe exaustivamente os números de cada teste.\n"
