@@ -65,6 +65,7 @@ function GenerateReportProvider({ children }) {
   const [userIaDirectionConclusion, setUserIaDirectionConclusion] = useState('')
   const [reportPdfUrl, setReportPdfUrl] = useState('')
   const [reportPdfBlob, setReportPdfBlob] = useState(null)
+  const [reportDocumentHtml, setReportDocumentHtml] = useState('')
 
   const value = {
     patients, setPatients,
@@ -81,6 +82,7 @@ function GenerateReportProvider({ children }) {
     userIaDirectionConclusion, setUserIaDirectionConclusion,
     reportPdfUrl, setReportPdfUrl,
     reportPdfBlob, setReportPdfBlob,
+    reportDocumentHtml, setReportDocumentHtml,
   }
 
   return <GenerateReportContext.Provider value={value}>{children}</GenerateReportContext.Provider>
@@ -288,6 +290,7 @@ function GenerateReportPage() {
     userIaDirectionConclusion, setUserIaDirectionConclusion,
     reportPdfUrl, setReportPdfUrl,
     reportPdfBlob, setReportPdfBlob,
+    reportDocumentHtml, setReportDocumentHtml,
   } = useContext(GenerateReportContext)
   const reportPreviewRef = useRef(null)
 
@@ -442,6 +445,7 @@ function GenerateReportPage() {
     setMessage('')
     setReportPdfUrl('')
     setReportPdfBlob(null)
+    setReportDocumentHtml('')
     if (!selectedPatient || !loadedReports.length) {
       setMessage('Selecione paciente e carregue pelo menos um relatório antes de gerar.')
       return
@@ -451,12 +455,34 @@ function GenerateReportPage() {
     }
     setGenerating(true)
     try {
+      const htmlResponse = await fetch('/api/reports/pdf-html', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          patient_id: selectedPatient,
+          report_entries: loadedReports.map((report) => ({
+            report_name: report.reportName,
+            input_data: formData[report.reportName] || {},
+          })),
+          patient_description: patientDescription,
+          user_ia_direction_conclusion: userIaDirectionConclusion,
+        }),
+      })
+      if (!htmlResponse.ok) {
+        const errorText = await htmlResponse.text()
+        throw new Error(errorText || 'Erro ao montar HTML do relatório')
+      }
+      const htmlData = await htmlResponse.json()
+      setReportDocumentHtml(htmlData.html || '')
+
       const response = await fetch('/api/reports/pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
             patient_id: selectedPatient,
+            document_html: htmlData.html || '',
             report_entries: loadedReports.map((report) => ({
               report_name: report.reportName,
               input_data: formData[report.reportName] || {},
@@ -531,6 +557,7 @@ function GenerateReportPage() {
         })),
         patient_description: patientDescription,
         user_ia_direction_conclusion: userIaDirectionConclusion,
+        document_html: reportDocumentHtml,
       }
       const encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
       localStorage.setItem('docx-editor-payload', JSON.stringify(payload))

@@ -18,6 +18,8 @@ from starlette.middleware.sessions import SessionMiddleware
 from playwright.sync_api import sync_playwright
 from docx import Document
 from docx.shared import Pt
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 from app.auth import login_user, logout_user, get_user_from_session, templates, get_authenticated_client, build_display_name
 from app.config import get_settings
@@ -31,6 +33,7 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 SETTINGS = get_settings()
 
 FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
+PDF_BORDER_COLOR = "#cbd5e1"
 
 
 def _patient_age_from_birth_date(birth_value):
@@ -71,22 +74,22 @@ def _build_pdf_header_html(patient: dict, profile: dict | None = None) -> str:
         '<div style="font-size:16px; font-weight:700; color:#0f172a; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;">Relatório de Avaliação Neuropsicológica</div>'
         '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:9.5pt; margin-bottom:14px;">'
         f'<tr>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Paciente</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:32%;">{escape(patient.get("full_name") or "Paciente")}</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Responsável</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; width:32%;">{escape(patient.get("responsavel") or "-")}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Paciente</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:32%;">{escape(patient.get("full_name") or "Paciente")}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Responsável</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:32%;">{escape(patient.get("responsavel") or "-")}</td>'
         f'</tr>'
         f'<tr>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Idade</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(age_text)}</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Profissional</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(profile.get("profession") or "-")}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Idade</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(age_text)}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Profissional</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(profile.get("profession") or "-")}</td>'
         f'</tr>'
         f'<tr>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Data de nascimento</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(birth_date)}</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px; font-weight:700; background:#e2e8f0;">Gênero</td>'
-        f'<td style="border:0.5px solid #000000; padding:7px 8px;">{escape(patient.get("gender") or "-")}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Data de nascimento</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(birth_date)}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Gênero</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(patient.get("gender") or "-")}</td>'
         f'</tr>'
         '</table>'
     )
@@ -99,10 +102,10 @@ def _build_patient_description_html(patient_description: str) -> str:
     return (
         '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
         '<tr>'
-        '<td style="border:0.5px solid #000000; padding:8px 10px; background:#f8fafc; font-weight:700;">Descrição do paciente</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-weight:700;">Descrição do paciente</td>'
         '</tr>'
         '<tr>'
-        f'<td style="border:0.5px solid #000000; padding:8px 10px; font-size:9.5pt; line-height:1.55;">{description_html}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:9.5pt; line-height:1.55;">{description_html}</td>'
         '</tr>'
         '</table>'
     )
@@ -147,7 +150,7 @@ def _build_pdf_page_html(body_html: str) -> str:
       margin-bottom: 14px;
     }}
     .block-table td {{
-      border: 0.5px solid #000;
+      border: 0.5px solid #cbd5e1;
       padding: 7px 8px;
       vertical-align: top;
     }}
@@ -178,7 +181,7 @@ def _build_pdf_page_html(body_html: str) -> str:
       font-size: 9pt;
     }}
     .report-box th, .report-box td {{
-      border: 0.5px solid #000;
+      border: 0.5px solid #cbd5e1;
       padding: 6px 8px;
     }}
     .report-box thead th {{
@@ -578,6 +581,41 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
     return report_text
 
 
+async def build_report_html_no_ai(client, patient, report_name: str, input_data: dict) -> str:
+    report_text = ""
+    if report_name == "TAC 2":
+        report_text = build_tac2_text_report(
+            client,
+            patient["id"],
+            patient.get("full_name") or "Paciente",
+            input_data,
+        )
+    else:
+        report_module = None
+        try:
+            from app.report_store import load_report_module
+            report_module = load_report_module(report_name)
+        except Exception:
+            report_module = None
+
+        if not report_module or not hasattr(report_module, 'build_report'):
+            raise HTTPException(status_code=400, detail="RelatÃ³rio nÃ£o suportado")
+
+        report_input = dict(input_data or {})
+        patient_age = _patient_age_from_birth_date(patient.get("birth_date"))
+        if patient_age is not None:
+            report_input["_patient_age"] = patient_age
+
+        report_output = report_module.build_report(patient["id"], patient.get("full_name") or "Paciente", report_input)
+        if isinstance(report_output, str):
+            report_text = report_output
+
+    if not report_text:
+        raise HTTPException(status_code=400, detail="RelatÃ³rio vazio")
+
+    return report_text
+
+
 def _render_pdf_sync(html_page: str) -> bytes:
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
@@ -672,26 +710,51 @@ def _html_to_docx_bytes(html_text: str) -> bytes:
     parser = _SimpleHtmlBlockParser()
     parser.feed(html_text or '')
 
+    def mark_paragraph(paragraph, keep_together=True, keep_with_next=False):
+        fmt = paragraph.paragraph_format
+        fmt.keep_together = keep_together
+        fmt.keep_with_next = keep_with_next
+        fmt.widow_control = True
+
+    def mark_row_no_split(row):
+        tr_pr = row._tr.get_or_add_trPr()
+        cant_split = OxmlElement('w:cantSplit')
+        tr_pr.append(cant_split)
+
     doc = Document()
     doc.styles['Normal'].font.name = 'Arial'
     doc.styles['Normal'].font.size = Pt(11)
 
+    previous_heading = None
     for tag, text in parser.blocks:
         cleaned = re.sub(r'\s+', ' ', text).strip()
         if not cleaned:
             continue
         if tag == 'h1':
-            doc.add_heading(cleaned, level=1)
+            paragraph = doc.add_heading(cleaned, level=1)
+            mark_paragraph(paragraph, keep_together=True, keep_with_next=True)
+            previous_heading = paragraph
         elif tag == 'h2':
-            doc.add_heading(cleaned, level=2)
+            paragraph = doc.add_heading(cleaned, level=2)
+            mark_paragraph(paragraph, keep_together=True, keep_with_next=True)
+            previous_heading = paragraph
         elif tag == 'h3':
-            doc.add_heading(cleaned, level=3)
+            paragraph = doc.add_heading(cleaned, level=3)
+            mark_paragraph(paragraph, keep_together=True, keep_with_next=True)
+            previous_heading = paragraph
         elif tag == 'li':
-            doc.add_paragraph(cleaned, style='List Bullet')
+            paragraph = doc.add_paragraph(cleaned, style='List Bullet')
+            mark_paragraph(paragraph, keep_together=True)
         elif tag == 'table_start':
-            doc.add_paragraph('Tabela do relatório')
+            paragraph = doc.add_paragraph('Tabela do relatório')
+            mark_paragraph(paragraph, keep_together=True)
         else:
-            doc.add_paragraph(cleaned)
+            paragraph = doc.add_paragraph(cleaned)
+            mark_paragraph(paragraph, keep_together=True)
+
+    for table in doc.tables:
+        for row in table.rows:
+            mark_row_no_split(row)
 
     buffer = io.BytesIO()
     doc.save(buffer)
@@ -742,7 +805,7 @@ def _build_editor_pdf_html(html_text: str) -> str:
       margin-bottom: 12px;
     }}
     .editor-document td, .editor-document th {{
-      border: 0.5px solid #000;
+      border: 0.5px solid #cbd5e1;
       padding: 6px 8px;
       vertical-align: top;
     }}
@@ -779,8 +842,13 @@ async def create_reports_pdf(request: Request):
     report_entries = payload.get('report_entries') or []
     patient_description = payload.get('patient_description') or ''
     user_ia_direction_conclusion = payload.get('user_ia_direction_conclusion') or ''
+    document_html = payload.get('document_html') or ''
     if not patient_id or not isinstance(report_entries, list) or not report_entries:
         raise HTTPException(status_code=400, detail='patient_id e report_entries sÃ£o obrigatÃ³rios')
+
+    if document_html.strip():
+        pdf_content = await build_combined_pdf([document_html])
+        return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'inline; filename="Relat\u00f3rio.pdf"'})
 
     report_folders = get_report_folders()
 
@@ -818,8 +886,8 @@ async def create_reports_pdf(request: Request):
     return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'inline; filename="Relat\u00f3rio.pdf"'})
 
 
-@app.post('/api/reports/editor-html')
-async def create_reports_editor_html(request: Request):
+@app.post('/api/reports/pdf-html')
+async def create_reports_pdf_html(request: Request):
     user = get_user_from_session(request)
     if not user:
         raise HTTPException(status_code=401, detail='N\u00e3o autenticado')
@@ -855,7 +923,7 @@ async def create_reports_editor_html(request: Request):
         report_name = entry.get('report_name')
         input_data = entry.get('input_data') or {}
         if not report_name or report_name not in report_folders:
-            raise HTTPException(status_code=400, detail=f'Relat\u00f3rio inv\u00e1lido: {report_name}')
+            raise HTTPException(status_code=400, detail=f"Relatório inválido: {report_name}")
         report_html = await build_report_html(client, patient, report_name, input_data)
         report_sections.append(_wrap_report_html(report_name, report_html))
         report_results.append({'report_name': report_name, 'results_html': report_html})
@@ -863,6 +931,64 @@ async def create_reports_editor_html(request: Request):
     header_html = _build_pdf_header_html(patient, profile)
     description_html = _build_patient_description_html(patient_description)
     conclusion_html = await _build_conclusion_html(patient, report_results, patient_description, user_ia_direction_conclusion)
+    body_html = ''.join(report_sections)
+    document_html = header_html + description_html + body_html + conclusion_html
+    return {"html": document_html}
+
+
+@app.post('/api/reports/editor-html')
+async def create_reports_editor_html(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail='N\u00e3o autenticado')
+
+    payload = await request.json()
+    patient_id = payload.get('patient_id')
+    report_entries = payload.get('report_entries') or []
+    patient_description = payload.get('patient_description') or ''
+    document_html = payload.get('document_html') or ''
+    if not patient_id or not isinstance(report_entries, list) or not report_entries:
+        raise HTTPException(status_code=400, detail='patient_id e report_entries s\u00e3o obrigat\u00f3rios')
+
+    if document_html.strip():
+        docx_bytes = _html_to_docx_bytes(document_html)
+        return {
+            "html": document_html,
+            "docx_base64": base64.b64encode(docx_bytes).decode("ascii"),
+            "file_name": "relatorio-editavel.docx",
+        }
+
+    report_folders = get_report_folders()
+
+    client = get_authenticated_client(request)
+    patient_resp = client.table('patients').select('id, full_name, birth_date, gender, responsavel').eq('psychologist_id', user['id']).eq('id', patient_id).limit(1).execute()
+    if getattr(patient_resp, 'error', None):
+        raise HTTPException(status_code=500, detail=str(patient_resp.error))
+    raw_data = getattr(patient_resp, 'data', []) or []
+    if not raw_data:
+        raise HTTPException(status_code=404, detail='Paciente n\u00e3o encontrado')
+    patient = raw_data[0]
+
+    profile_resp = client.table('profiles').select('id, profession').eq('id', user['id']).limit(1).execute()
+    if getattr(profile_resp, 'error', None):
+        raise HTTPException(status_code=500, detail=str(profile_resp.error))
+    profile_rows = getattr(profile_resp, 'data', []) or []
+    profile = profile_rows[0] if profile_rows else {}
+
+    report_sections = []
+    report_results = []
+    for entry in report_entries:
+        report_name = entry.get('report_name')
+        input_data = entry.get('input_data') or {}
+        if not report_name or report_name not in report_folders:
+            raise HTTPException(status_code=400, detail=f'Relat\u00f3rio inv\u00e1lido: {report_name}')
+        report_html = await build_report_html_no_ai(client, patient, report_name, input_data)
+        report_sections.append(_wrap_report_html(report_name, report_html))
+        report_results.append({'report_name': report_name, 'results_html': report_html})
+
+    header_html = _build_pdf_header_html(patient, profile)
+    description_html = _build_patient_description_html(patient_description)
+    conclusion_html = ""
     body_html = ''.join(report_sections)
     document_html = header_html + description_html + body_html + conclusion_html
     docx_bytes = _html_to_docx_bytes(document_html)

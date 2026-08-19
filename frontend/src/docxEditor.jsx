@@ -13,9 +13,7 @@ function htmlToDocxParagraphs(html) {
       const text = node.textContent || ''
       return text ? [new TextRun({ text, ...inherited })] : []
     }
-
     if (node.nodeType !== Node.ELEMENT_NODE) return []
-
     const tag = node.tagName.toLowerCase()
     const next = { ...inherited }
     if (tag === 'strong' || tag === 'b') next.bold = true
@@ -185,6 +183,12 @@ export function DocxEditorPage({ user }) {
   return (
     <div className="docx-editor-page">
       <div className="docx-editor-shell">
+        <div className="docx-editor-header">
+          <div>
+            <h1>Editor do relatório</h1>
+            <p>Visual A4 para ficar mais perto do PDF final.</p>
+          </div>
+        </div>
         <div className="docx-editor-toolbar">
           <button type="button" onClick={() => exec('bold')}>B</button>
           <button type="button" onClick={() => exec('italic')}>I</button>
@@ -198,13 +202,17 @@ export function DocxEditorPage({ user }) {
           {loading ? (
             <div className="docx-editor-loading">Carregando editor...</div>
           ) : (
-            <div
-              ref={editorRef}
-              className="docx-editor"
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleInput}
-            />
+            <div className="docx-editor-stage">
+              <div className="docx-editor-page-sheet">
+                <div
+                  ref={editorRef}
+                  className="docx-editor"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={handleInput}
+                />
+              </div>
+            </div>
           )}
         </div>
         {message && <div className="docx-editor-message">{message}</div>}
