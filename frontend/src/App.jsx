@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom'
 import { apiGet, apiPatch, apiPost, apiDelete } from './api'
+import { DocxEditorPage } from './docxEditor'
 
 const reportRanges = {
   'TAC 2': {
@@ -113,6 +114,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage user={user} onLogin={setUser} />} />
+        <Route path="/edit-docx" element={<DocxEditorPage user={user} />} />
         <Route path="/" element={<ProtectedLayout user={user} onLogout={logout} />}>
           <Route index element={<Navigate to="/generate-report" replace />} />
           <Route path="generate-report" element={<GenerateReportPage />} />
@@ -511,6 +513,34 @@ function GenerateReportPage() {
     }
   }
 
+  const handleEditDocx = async () => {
+    if (!selectedPatient || !loadedReports.length) {
+      setMessage('Selecione paciente e carregue pelo menos um relatório antes de editar.')
+      return
+    }
+    if (!validateInputs()) {
+      return
+    }
+
+    try {
+      localStorage.setItem(
+        'docx-editor-payload',
+        JSON.stringify({
+          patient_id: selectedPatient,
+          report_entries: loadedReports.map((report) => ({
+            report_name: report.reportName,
+            input_data: formData[report.reportName] || {},
+          })),
+          patient_description: patientDescription,
+          user_ia_direction_conclusion: userIaDirectionConclusion,
+        })
+      )
+      window.open('/edit-docx', '_blank', 'noopener,noreferrer')
+    } catch (err) {
+      setMessage(err?.message || 'Erro ao abrir editor DOCX')
+    }
+  }
+
   // Auto-scroll to the start of the generated report preview
   useEffect(() => {
     if (reportPdfUrl && reportPreviewRef.current) {
@@ -657,6 +687,9 @@ function GenerateReportPage() {
         <div className="download-block" style={{ marginTop: 16 }}>
           <button type="button" className="button" onClick={handleDownloadPdf} disabled={loading}>
             Baixar
+          </button>
+          <button type="button" className="button-secondary" onClick={handleEditDocx} disabled={loading} style={{ marginLeft: 12 }}>
+            Editar PDF
           </button>
         </div>
       )}

@@ -1056,3 +1056,77 @@ thead th {
     max-width: 794px;
     margin: 0 auto;
 }
+
+.docx-editor-page {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top left, rgba(15, 23, 42, 0.18), transparent 34%),
+        linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 24px;
+}
+
+.docx-editor-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.docx-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 16px 16px 0 0;
+    backdrop-filter: blur(10px);
+}
+
+.docx-editor-toolbar button {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.docx-editor-toolbar button:hover {
+    background: #f1f5f9;
+}
+
+.docx-editor-canvas {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-top: 0;
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 22px 70px rgba(15, 23, 42, 0.12);
+    padding: 24px;
+}
+
+.docx-editor-loading {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #334155;
+    font-weight: 600;
+}
+
+.docx-editor {
+    min-height: 78vh;
+    outline: none;
+    color: #0f172a;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 16px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+}
+
+.docx-editor-message {
+    margin-top: 12px;
+    color: #b91c1c;
+    font-size: 14px;
+    font-weight: 600;
+}

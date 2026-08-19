@@ -677,6 +677,56 @@ async def create_reports_pdf(request: Request):
     return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'inline; filename="Relat\u00f3rio.pdf"'})
 
 
+@app.post('/api/reports/editor-html')
+async def create_reports_editor_html(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail='N\u00e3o autenticado')
+
+    payload = await request.json()
+    patient_id = payload.get('patient_id')
+    report_entries = payload.get('report_entries') or []
+    patient_description = payload.get('patient_description') or ''
+    user_ia_direction_conclusion = payload.get('user_ia_direction_conclusion') or ''
+    if not patient_id or not isinstance(report_entries, list) or not report_entries:
+        raise HTTPException(status_code=400, detail='patient_id e report_entries s\u00e3o obrigat\u00f3rios')
+
+    report_folders = get_report_folders()
+
+    client = get_authenticated_client(request)
+    patient_resp = client.table('patients').select('id, full_name, birth_date, gender, responsavel').eq('psychologist_id', user['id']).eq('id', patient_id).limit(1).execute()
+    if getattr(patient_resp, 'error', None):
+        raise HTTPException(status_code=500, detail=str(patient_resp.error))
+    raw_data = getattr(patient_resp, 'data', []) or []
+    if not raw_data:
+        raise HTTPException(status_code=404, detail='Paciente n\u00e3o encontrado')
+    patient = raw_data[0]
+
+    profile_resp = client.table('profiles').select('id, profession').eq('id', user['id']).limit(1).execute()
+    if getattr(profile_resp, 'error', None):
+        raise HTTPException(status_code=500, detail=str(profile_resp.error))
+    profile_rows = getattr(profile_resp, 'data', []) or []
+    profile = profile_rows[0] if profile_rows else {}
+
+    report_sections = []
+    report_results = []
+    for entry in report_entries:
+        report_name = entry.get('report_name')
+        input_data = entry.get('input_data') or {}
+        if not report_name or report_name not in report_folders:
+            raise HTTPException(status_code=400, detail=f'Relat\u00f3rio inv\u00e1lido: {report_name}')
+        report_html = await build_report_html(client, patient, report_name, input_data)
+        report_sections.append(_wrap_report_html(report_name, report_html))
+        report_results.append({'report_name': report_name, 'results_html': report_html})
+
+    header_html = _build_pdf_header_html(patient, profile)
+    description_html = _build_patient_description_html(patient_description)
+    conclusion_html = await _build_conclusion_html(patient, report_results, patient_description, user_ia_direction_conclusion)
+    body_html = ''.join(report_sections)
+    document_html = header_html + description_html + body_html + conclusion_html
+    return {"html": document_html}
+
+
 @app.post('/api/conclusion')
 async def api_conclusion(request: Request):
     """
