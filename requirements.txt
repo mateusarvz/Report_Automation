@@ -10,3 +10,4 @@ supabase
 python-multipart
 pandas
 pytest
+python-docx

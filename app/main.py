@@ -6,6 +6,8 @@ import asyncio
 from contextlib import asynccontextmanager
 from html import escape
 from pathlib import Path
+from html.parser import HTMLParser
+import base64
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request, Form
@@ -14,6 +16,8 @@ from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Stre
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from playwright.sync_api import sync_playwright
+from docx import Document
+from docx.shared import Pt
 
 from app.auth import login_user, logout_user, get_user_from_session, templates, get_authenticated_client, build_display_name
 from app.config import get_settings
@@ -627,6 +631,143 @@ def _wrap_report_html(report_name: str, report_html: str) -> str:
         '</table>'
     )
 
+
+class _SimpleHtmlBlockParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.blocks = []
+        self._current = []
+        self._current_tag = None
+
+    def _flush(self):
+        text = ''.join(self._current).strip()
+        if text:
+            self.blocks.append((self._current_tag or 'p', text))
+        self._current = []
+        self._current_tag = None
+
+    def handle_starttag(self, tag, attrs):
+        tag = tag.lower()
+        if tag in {'p', 'div', 'h1', 'h2', 'h3', 'h4', 'li', 'td', 'th', 'tr'}:
+            if self._current:
+                self._flush()
+            self._current_tag = tag
+        elif tag == 'br':
+            self._current.append('\n')
+        elif tag == 'table':
+            if self._current:
+                self._flush()
+            self.blocks.append(('table_start', ''))
+
+    def handle_endtag(self, tag):
+        tag = tag.lower()
+        if tag in {'p', 'div', 'h1', 'h2', 'h3', 'h4', 'li', 'td', 'th', 'tr'}:
+            self._flush()
+
+    def handle_data(self, data):
+        self._current.append(data)
+
+
+def _html_to_docx_bytes(html_text: str) -> bytes:
+    parser = _SimpleHtmlBlockParser()
+    parser.feed(html_text or '')
+
+    doc = Document()
+    doc.styles['Normal'].font.name = 'Arial'
+    doc.styles['Normal'].font.size = Pt(11)
+
+    for tag, text in parser.blocks:
+        cleaned = re.sub(r'\s+', ' ', text).strip()
+        if not cleaned:
+            continue
+        if tag == 'h1':
+            doc.add_heading(cleaned, level=1)
+        elif tag == 'h2':
+            doc.add_heading(cleaned, level=2)
+        elif tag == 'h3':
+            doc.add_heading(cleaned, level=3)
+        elif tag == 'li':
+            doc.add_paragraph(cleaned, style='List Bullet')
+        elif tag == 'table_start':
+            doc.add_paragraph('Tabela do relatório')
+        else:
+            doc.add_paragraph(cleaned)
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    return buffer.getvalue()
+
+
+def _build_editor_pdf_html(html_text: str) -> str:
+    return f"""<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    @page {{ size: A4; margin: 18mm; }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      padding: 0;
+      color: #111827;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #fff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }}
+    .editor-document {{
+      font-size: 11pt;
+      line-height: 1.55;
+    }}
+    .editor-document h1 {{
+      font-size: 16pt;
+      margin: 0 0 12px 0;
+    }}
+    .editor-document h2 {{
+      font-size: 14pt;
+      margin: 0 0 10px 0;
+    }}
+    .editor-document h3 {{
+      font-size: 12pt;
+      margin: 0 0 8px 0;
+    }}
+    .editor-document p {{
+      margin: 0 0 8px 0;
+      text-align: justify;
+    }}
+    .editor-document table {{
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+    }}
+    .editor-document td, .editor-document th {{
+      border: 0.5px solid #000;
+      padding: 6px 8px;
+      vertical-align: top;
+    }}
+  </style>
+</head>
+<body>
+  <div class="editor-document">{html_text}</div>
+</body>
+</html>"""
+
+
+def _render_editor_pdf_sync(html_page: str) -> bytes:
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        try:
+            page = browser.new_page(viewport={"width": 1240, "height": 1754})
+            page.set_content(html_page, wait_until="networkidle")
+            return page.pdf(
+                format="A4",
+                print_background=True,
+                margin={"top": "18mm", "right": "18mm", "bottom": "18mm", "left": "18mm"},
+            )
+        finally:
+            browser.close()
+
 @app.post('/api/reports/pdf')
 async def create_reports_pdf(request: Request):
     user = get_user_from_session(request)
@@ -724,7 +865,32 @@ async def create_reports_editor_html(request: Request):
     conclusion_html = await _build_conclusion_html(patient, report_results, patient_description, user_ia_direction_conclusion)
     body_html = ''.join(report_sections)
     document_html = header_html + description_html + body_html + conclusion_html
-    return {"html": document_html}
+    docx_bytes = _html_to_docx_bytes(document_html)
+    return {
+        "html": document_html,
+        "docx_base64": base64.b64encode(docx_bytes).decode("ascii"),
+        "file_name": "relatorio-editavel.docx",
+    }
+
+
+@app.post('/api/reports/editor-pdf')
+async def create_reports_editor_pdf(request: Request):
+    user = get_user_from_session(request)
+    if not user:
+        raise HTTPException(status_code=401, detail='N\u00e3o autenticado')
+
+    payload = await request.json()
+    html_text = payload.get('html') or ''
+    if not html_text.strip():
+        raise HTTPException(status_code=400, detail='html \u00e9 obrigat\u00f3rio')
+
+    pdf_html = _build_editor_pdf_html(html_text)
+    pdf_bytes = await asyncio.to_thread(_render_editor_pdf_sync, pdf_html)
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type='application/pdf',
+        headers={'Content-Disposition': 'inline; filename="relatorio-editavel.pdf"'},
+    )
 
 
 @app.post('/api/conclusion')

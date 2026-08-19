@@ -523,19 +523,18 @@ function GenerateReportPage() {
     }
 
     try {
-      localStorage.setItem(
-        'docx-editor-payload',
-        JSON.stringify({
-          patient_id: selectedPatient,
-          report_entries: loadedReports.map((report) => ({
-            report_name: report.reportName,
-            input_data: formData[report.reportName] || {},
-          })),
-          patient_description: patientDescription,
-          user_ia_direction_conclusion: userIaDirectionConclusion,
-        })
-      )
-      window.open('/edit-docx', '_blank', 'noopener,noreferrer')
+      const payload = {
+        patient_id: selectedPatient,
+        report_entries: loadedReports.map((report) => ({
+          report_name: report.reportName,
+          input_data: formData[report.reportName] || {},
+        })),
+        patient_description: patientDescription,
+        user_ia_direction_conclusion: userIaDirectionConclusion,
+      }
+      const encodedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+      localStorage.setItem('docx-editor-payload', JSON.stringify(payload))
+      window.open(`/edit-docx?payload=${encodeURIComponent(encodedPayload)}`, '_blank', 'noopener,noreferrer')
     } catch (err) {
       setMessage(err?.message || 'Erro ao abrir editor DOCX')
     }
