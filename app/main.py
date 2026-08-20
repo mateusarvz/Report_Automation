@@ -69,6 +69,9 @@ def _build_pdf_header_html(patient: dict, profile: dict | None = None) -> str:
     age = _patient_age_from_birth_date(patient.get("birth_date"))
     age_text = f"{age} anos" if age is not None else "-"
     profile = profile or {}
+    professional_name = (profile.get("full_name") or "").strip()
+    professional_role = (profile.get("profession") or "").strip()
+    professional_text = " / ".join(part for part in [professional_name, professional_role] if part) or "-"
     return (
         '<div class="pdf-document">'
         '<div style="font-size:17px; font-weight:700; color:#0f172a; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;">Relatório de Avaliação Neuropsicológica</div>'
@@ -83,7 +86,7 @@ def _build_pdf_header_html(patient: dict, profile: dict | None = None) -> str:
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Idade</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(age_text)}</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Profissional</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(profile.get("profession") or "-")}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(professional_text)}</td>'
         f'</tr>'
         f'<tr>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Data de nascimento</td>'
@@ -106,6 +109,54 @@ def _build_patient_description_html(patient_description: str) -> str:
         '</tr>'
         '<tr>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{description_html}</td>'
+        '</tr>'
+        '</table>'
+    )
+
+
+def _build_patient_history_html(patient_health_history: str) -> str:
+    if not patient_health_history or not patient_health_history.strip():
+        return ""
+    history_html = escape(patient_health_history).replace("\n", "<br />")
+    return (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
+        '<tr>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Histórico de saúde</td>'
+        '</tr>'
+        '<tr>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{history_html}</td>'
+        '</tr>'
+        '</table>'
+    )
+
+
+def _build_patient_school_life_html(patient_school_life: str) -> str:
+    if not patient_school_life or not patient_school_life.strip():
+        return ""
+    school_life_html = escape(patient_school_life).replace("\n", "<br />")
+    return (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
+        '<tr>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Vida Escolar</td>'
+        '</tr>'
+        '<tr>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{school_life_html}</td>'
+        '</tr>'
+        '</table>'
+    )
+
+
+def _build_patient_evaluation_behavior_html(patient_evaluation_behavior: str) -> str:
+    if not patient_evaluation_behavior or not patient_evaluation_behavior.strip():
+        return ""
+    behavior_html = escape(patient_evaluation_behavior).replace("\n", "<br />")
+    return (
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
+        '<tr>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Comportamento durante a avaliação</td>'
+        '</tr>'
+        '<tr>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{behavior_html}</td>'
         '</tr>'
         '</table>'
     )
@@ -662,13 +713,24 @@ async def build_combined_pdf(report_sections: list[str]) -> bytes:
     return await asyncio.to_thread(_render_pdf_sync, html_page)
 
 
-async def _build_conclusion_html(patient: dict, report_results: list, patient_description: str, user_ia_direction_conclusion: str) -> str:
+async def _build_conclusion_html(
+    patient: dict,
+    report_results: list,
+    patient_description: str,
+    patient_health_history: str,
+    patient_school_life: str,
+    patient_evaluation_behavior: str,
+    user_ia_direction_conclusion: str,
+) -> str:
     from app.conclusao_service import generate_conclusion
 
     conclusion_html = await generate_conclusion(
         birth_date=patient.get('birth_date'),
         report_results=report_results,
         patient_description=patient_description,
+        patient_health_history=patient_health_history,
+        patient_school_life=patient_school_life,
+        patient_evaluation_behavior=patient_evaluation_behavior,
         user_ia_direction_conclusion=user_ia_direction_conclusion,
     )
     return (
@@ -867,6 +929,9 @@ async def create_reports_pdf(request: Request):
     patient_id = payload.get('patient_id')
     report_entries = payload.get('report_entries') or []
     patient_description = payload.get('patient_description') or ''
+    patient_health_history = payload.get('patient_health_history') or ''
+    patient_school_life = payload.get('patient_school_life') or ''
+    patient_evaluation_behavior = payload.get('patient_evaluation_behavior') or ''
     user_ia_direction_conclusion = payload.get('user_ia_direction_conclusion') or ''
     document_html = payload.get('document_html') or ''
     if not patient_id or not isinstance(report_entries, list) or not report_entries:
@@ -906,9 +971,20 @@ async def create_reports_pdf(request: Request):
 
     header_html = _build_pdf_header_html(patient, profile)
     description_html = _build_patient_description_html(patient_description)
-    conclusion_html = await _build_conclusion_html(patient, report_results, patient_description, user_ia_direction_conclusion)
+    history_html = _build_patient_history_html(patient_health_history)
+    school_life_html = _build_patient_school_life_html(patient_school_life)
+    behavior_html = _build_patient_evaluation_behavior_html(patient_evaluation_behavior)
+    conclusion_html = await _build_conclusion_html(
+        patient,
+        report_results,
+        patient_description,
+        patient_health_history,
+        patient_school_life,
+        patient_evaluation_behavior,
+        user_ia_direction_conclusion,
+    )
     body_html = ''.join(report_sections)
-    pdf_content = await build_combined_pdf([header_html + description_html + body_html + conclusion_html])
+    pdf_content = await build_combined_pdf([header_html + description_html + history_html + school_life_html + behavior_html + body_html + conclusion_html])
     return StreamingResponse(io.BytesIO(pdf_content), media_type='application/pdf', headers={'Content-Disposition': 'inline; filename="Relat\u00f3rio.pdf"'})
 
 
@@ -922,6 +998,9 @@ async def create_reports_pdf_html(request: Request):
     patient_id = payload.get('patient_id')
     report_entries = payload.get('report_entries') or []
     patient_description = payload.get('patient_description') or ''
+    patient_health_history = payload.get('patient_health_history') or ''
+    patient_school_life = payload.get('patient_school_life') or ''
+    patient_evaluation_behavior = payload.get('patient_evaluation_behavior') or ''
     user_ia_direction_conclusion = payload.get('user_ia_direction_conclusion') or ''
     if not patient_id or not isinstance(report_entries, list) or not report_entries:
         raise HTTPException(status_code=400, detail='patient_id e report_entries s\u00e3o obrigat\u00f3rios')
@@ -956,9 +1035,20 @@ async def create_reports_pdf_html(request: Request):
 
     header_html = _build_pdf_header_html(patient, profile)
     description_html = _build_patient_description_html(patient_description)
-    conclusion_html = await _build_conclusion_html(patient, report_results, patient_description, user_ia_direction_conclusion)
+    history_html = _build_patient_history_html(patient_health_history)
+    school_life_html = _build_patient_school_life_html(patient_school_life)
+    behavior_html = _build_patient_evaluation_behavior_html(patient_evaluation_behavior)
+    conclusion_html = await _build_conclusion_html(
+        patient,
+        report_results,
+        patient_description,
+        patient_health_history,
+        patient_school_life,
+        patient_evaluation_behavior,
+        user_ia_direction_conclusion,
+    )
     body_html = ''.join(report_sections)
-    document_html = header_html + description_html + body_html + conclusion_html
+    document_html = header_html + description_html + history_html + school_life_html + behavior_html + body_html + conclusion_html
     return {"html": document_html}
 
 
@@ -972,6 +1062,9 @@ async def create_reports_editor_html(request: Request):
     patient_id = payload.get('patient_id')
     report_entries = payload.get('report_entries') or []
     patient_description = payload.get('patient_description') or ''
+    patient_health_history = payload.get('patient_health_history') or ''
+    patient_school_life = payload.get('patient_school_life') or ''
+    patient_evaluation_behavior = payload.get('patient_evaluation_behavior') or ''
     document_html = payload.get('document_html') or ''
     if not patient_id or not isinstance(report_entries, list) or not report_entries:
         raise HTTPException(status_code=400, detail='patient_id e report_entries s\u00e3o obrigat\u00f3rios')
@@ -1014,9 +1107,12 @@ async def create_reports_editor_html(request: Request):
 
     header_html = _build_pdf_header_html(patient, profile)
     description_html = _build_patient_description_html(patient_description)
+    history_html = _build_patient_history_html(patient_health_history)
+    school_life_html = _build_patient_school_life_html(patient_school_life)
+    behavior_html = _build_patient_evaluation_behavior_html(patient_evaluation_behavior)
     conclusion_html = ""
     body_html = ''.join(report_sections)
-    document_html = header_html + description_html + body_html + conclusion_html
+    document_html = header_html + description_html + history_html + school_life_html + behavior_html + body_html + conclusion_html
     docx_bytes = _html_to_docx_bytes(document_html)
     return {
         "html": document_html,
@@ -1076,10 +1172,16 @@ async def api_conclusion(request: Request):
     patient = raw_data[0]
 
     from app.conclusao_service import generate_conclusion
+    patient_health_history = payload.get('patient_health_history') or ''
+    patient_school_life = payload.get('patient_school_life') or ''
+    patient_evaluation_behavior = payload.get('patient_evaluation_behavior') or ''
     conclusion_html = await generate_conclusion(
         birth_date=patient.get('birth_date'),
         report_results=report_results,
         patient_description=patient_description,
+        patient_health_history=patient_health_history,
+        patient_school_life=patient_school_life,
+        patient_evaluation_behavior=patient_evaluation_behavior,
         user_ia_direction_conclusion=user_ia_direction_conclusion,
     )
     return HTMLResponse(conclusion_html)

@@ -9,13 +9,17 @@ Toda a lógica referente à conclusão vive aqui:
   3. O arquivo "IA-directions.txt" de cada relatório, pareado corretamente com os
      resultados do relatório correspondente (ex.: TAC 2 usa Relatorios_Metricas/TAC 2/IA-directions.txt);
   4. Descrição do paciente escrita pelo usuário;
-  5. Variável "user_ia_direction_conclusion" (direção dada pelo usuário para a conclusão).
+  5. Histórico de saúde escrito pelo usuário;
+  6. Vida escolar escrita pelo usuário;
+  7. Comportamento durante a avaliação escrito pelo usuário;
+  8. Variável "user_ia_direction_conclusion" (direção dada pelo usuário para a conclusão).
 
 Retorna o texto da conclusão formatado como HTML (parágrafos <p>), pronto para ser
 inserido ao final do relatório PDF.
 """
 
 import os
+import asyncio
 from pathlib import Path
 from datetime import date, datetime
 
@@ -65,14 +69,17 @@ def _build_prompt(
     age_info: str,
     report_blocks: list,
     patient_description: str,
+    patient_health_history: str,
+    patient_school_life: str,
+    patient_evaluation_behavior: str,
     user_ia_direction_conclusion: str,
 ) -> str:
     """
     Monta o prompt final enviado ao Gemini, priorizando:
       1. Instrução de papel (profissional de neuropsicologia);
-      2. Idade e descrição do paciente;
+      2. Direção do usuário para a conclusão;
       3. Resultados e diretrizes de cada relatório selecionado;
-      4. Direção do usuário para a conclusão.
+      4. Contexto clínico do paciente como apoio, não como prioridade.
     """
     directions_text = ""
 
@@ -98,8 +105,10 @@ def _build_prompt(
         "INSTRUÇÃO PRINCIPAL (CRÍTICA):\n"
         "Atue como um profissional de neuropsicologia.\n"
         "Você está escrevendo a seção 'Síntese dos resultados' de um relatório de avaliação neuropsicológica.\n"
-        "Escreva um texto fluido e dinâmico que integre os resultados de todos os testes aplicados, "
-        "a idade e a descrição do paciente e a direção fornecida pelo profissional.\n"
+        "A prioridade máxima é a DIREÇÃO DO PROFISSIONAL para esta conclusão.\n"
+        "Use essa direção como eixo principal da síntese e como guia da redação final.\n"
+        "Escreva um texto fluido e dinâmico que integre os resultados de todos os testes aplicados e "
+        "só depois incorpore o contexto clínico do paciente como apoio secundário.\n"
         "Varie o tamanho das frases, alterne períodos curtos e longos, e use conectivos e transições "
         "naturais para dar ritmo à leitura. Evite começar parágrafos sempre da mesma forma e evite "
         "repetir as mesmas estruturas; o texto deve ser coeso, envolvente e fluido, porém sempre com "
@@ -111,16 +120,28 @@ def _build_prompt(
         "Não cite a idade do paciente de forma explícita.\n"
         "Não repita o conteúdo dos relatórios; apenas sintetize-os de forma coesa.\n\n"
 
-        "DADOS DE ENTRADA DO PACIENTE:\n"
-        f"Idade do Paciente: {age_info}\n"
+        "CONTEXTO CLÍNICO DO PACIENTE, USAR COMO APOIO SECUNDÁRIO:\n"
         "Descrição do Paciente (escrita pelo profissional):\n"
         f"{patient_description or 'Nenhuma descrição inserida.'}\n"
-        "Trate essa descrição como se fosse pensada por você e integre-a à conclusão.\n\n"
+        "Use apenas como informação relevante, sem sobrepor a direção do profissional.\n\n"
+
+        "Histórico de Saúde (escrito pelo profissional):\n"
+        f"{patient_health_history or 'Nenhum histórico de saúde inserido.'}\n"
+        "Use apenas como contexto clínico relevante, sem prioridade sobre a direção do profissional.\n\n"
+
+        "Vida Escolar (escrito pelo profissional):\n"
+        f"{patient_school_life or 'Nenhuma informação escolar inserida.'}\n"
+        "Use apenas como contexto relevante, sem prioridade sobre a direção do profissional.\n\n"
+
+        "Comportamento Durante a Avaliação (escrito pelo profissional):\n"
+        f"{patient_evaluation_behavior or 'Nenhum comportamento registrado.'}\n"
+        "Use apenas como observação complementar, sem prioridade sobre a direção do profissional.\n\n"
+
+        "DIREÇÃO DO PROFISSIONAL PARA ESTA CONCLUSÃO:\n"
+        f"{direction_block}\n"
 
         "RESULTADOS E DIRETRIZES DOS TESTES SELECIONADOS:\n"
         f"{directions_text}\n"
-
-        + direction_block
 
         + "\nProduza apenas a síntese, em texto corrido e em parágrafos de texto puro, "
           "sem títulos, sem listas, sem símbolos de markdown e sem textos introdutórios "
@@ -143,10 +164,39 @@ def _format_html_text(generated_text: str) -> str:
     return f'<div style="padding-left:14px; padding-right:14px;">{body}</div>'
 
 
+def _build_fallback_conclusion_html(
+    age_info: str,
+    patient_description: str,
+    patient_health_history: str,
+    patient_school_life: str,
+    patient_evaluation_behavior: str,
+    user_ia_direction_conclusion: str,
+) -> str:
+    parts = [
+        "Síntese temporariamente indisponível por instabilidade do serviço de IA.",
+    ]
+    if patient_description.strip():
+        parts.append(f"Descrição clínica informada: {patient_description.strip()}")
+    if patient_health_history.strip():
+        parts.append(f"Histórico de saúde informado: {patient_health_history.strip()}")
+    if patient_school_life.strip():
+        parts.append(f"Vida escolar informada: {patient_school_life.strip()}")
+    if patient_evaluation_behavior.strip():
+        parts.append(f"Comportamento durante a avaliação: {patient_evaluation_behavior.strip()}")
+    if user_ia_direction_conclusion.strip():
+        parts.append(f"Direção profissional: {user_ia_direction_conclusion.strip()}")
+    parts.append(f"Idade de referência: {age_info}")
+    body = "".join(f"<p>{part}</p>" for part in parts)
+    return f'<div style="padding-left:14px; padding-right:14px;">{body}</div>'
+
+
 async def generate_conclusion(
     birth_date: str = None,
     report_results: list = None,
     patient_description: str = "",
+    patient_health_history: str = "",
+    patient_school_life: str = "",
+    patient_evaluation_behavior: str = "",
     user_ia_direction_conclusion: str = "",
 ) -> str:
     """
@@ -157,6 +207,9 @@ async def generate_conclusion(
         report_results: lista de dicionários com os resultados de cada relatório selecionado.
             Formato esperado: [{"report_name": str, "results_html": str}, ...]
         patient_description: descrição do paciente escrita pelo usuário.
+        patient_health_history: histórico de saúde escrito pelo usuário.
+        patient_school_life: vida escolar escrita pelo usuário.
+        patient_evaluation_behavior: comportamento durante a avaliação escrito pelo usuário.
         user_ia_direction_conclusion: direção do usuário para a conclusão.
 
     Returns:
@@ -191,8 +244,17 @@ async def generate_conclusion(
             "----------------------------\n"
         )
 
-    # 4) Descrição do paciente + 5) Direção do usuário são passadas à montagem do prompt
-    prompt = _build_prompt(age_info, report_blocks, patient_description, user_ia_direction_conclusion)
+    # 4) Descrição do paciente + 5) histórico + 6) comportamento + 7) direção do usuário
+    # são passados à montagem do prompt
+    prompt = _build_prompt(
+        age_info,
+        report_blocks,
+        patient_description,
+        patient_health_history,
+        patient_school_life,
+        patient_evaluation_behavior,
+        user_ia_direction_conclusion,
+    )
 
     model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
@@ -207,12 +269,44 @@ async def generate_conclusion(
         ]
     }
 
+    retry_statuses = {429, 500, 502, 503, 504}
+    last_error = None
+
     async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(url, json=json_payload, timeout=60.0)
-            response.raise_for_status()
-            data = response.json()
-            generated_text = data['candidates'][0]['content']['parts'][0]['text']
-            return _format_html_text(generated_text)
-        except Exception as e:
-            return f"<p><em>Erro ao gerar a conclusão via Gemini: {str(e)}</em></p>"
+        for attempt in range(3):
+            try:
+                response = await client.post(url, json=json_payload, timeout=60.0)
+                if response.status_code in retry_statuses:
+                    last_error = httpx.HTTPStatusError(
+                        f"Server error '{response.status_code} {response.reason_phrase}' for url '{url}'",
+                        request=response.request,
+                        response=response,
+                    )
+                    raise last_error
+                response.raise_for_status()
+                data = response.json()
+                generated_text = data['candidates'][0]['content']['parts'][0]['text']
+                return _format_html_text(generated_text)
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError, KeyError, IndexError, ValueError) as exc:
+                last_error = exc
+                if attempt < 2:
+                    await asyncio.sleep(1.5 * (2 ** attempt))
+                    continue
+                break
+            except Exception as exc:
+                last_error = exc
+                break
+
+    fallback_html = _build_fallback_conclusion_html(
+        age_info,
+        patient_description,
+        patient_health_history,
+        patient_school_life,
+        patient_evaluation_behavior,
+        user_ia_direction_conclusion,
+    )
+    error_text = str(last_error) if last_error else "erro desconhecido"
+    return (
+        f'{fallback_html}'
+        f'<p><em>Conclusão automática provisória. Gemini indisponível no momento: {error_text}</em></p>'
+    )

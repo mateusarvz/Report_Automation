@@ -62,6 +62,9 @@ function GenerateReportProvider({ children }) {
   const [generating, setGenerating] = useState(false)
   const [invalidFields, setInvalidFields] = useState({})
   const [patientDescription, setPatientDescription] = useState('')
+  const [patientHealthHistory, setPatientHealthHistory] = useState('')
+  const [patientSchoolLife, setPatientSchoolLife] = useState('')
+  const [patientEvaluationBehavior, setPatientEvaluationBehavior] = useState('')
   const [userIaDirectionConclusion, setUserIaDirectionConclusion] = useState('')
   const [reportPdfUrl, setReportPdfUrl] = useState('')
   const [reportPdfBlob, setReportPdfBlob] = useState(null)
@@ -79,6 +82,9 @@ function GenerateReportProvider({ children }) {
     generating, setGenerating,
     invalidFields, setInvalidFields,
     patientDescription, setPatientDescription,
+    patientHealthHistory, setPatientHealthHistory,
+    patientSchoolLife, setPatientSchoolLife,
+    patientEvaluationBehavior, setPatientEvaluationBehavior,
     userIaDirectionConclusion, setUserIaDirectionConclusion,
     reportPdfUrl, setReportPdfUrl,
     reportPdfBlob, setReportPdfBlob,
@@ -287,6 +293,9 @@ function GenerateReportPage() {
     generating, setGenerating,
     invalidFields, setInvalidFields,
     patientDescription, setPatientDescription,
+    patientHealthHistory, setPatientHealthHistory,
+    patientSchoolLife, setPatientSchoolLife,
+    patientEvaluationBehavior, setPatientEvaluationBehavior,
     userIaDirectionConclusion, setUserIaDirectionConclusion,
     reportPdfUrl, setReportPdfUrl,
     reportPdfBlob, setReportPdfBlob,
@@ -466,6 +475,9 @@ function GenerateReportPage() {
             input_data: formData[report.reportName] || {},
           })),
           patient_description: patientDescription,
+          patient_health_history: patientHealthHistory,
+          patient_school_life: patientSchoolLife,
+          patient_evaluation_behavior: patientEvaluationBehavior,
           user_ia_direction_conclusion: userIaDirectionConclusion,
         }),
       })
@@ -488,6 +500,9 @@ function GenerateReportPage() {
               input_data: formData[report.reportName] || {},
             })),
             patient_description: patientDescription,
+            patient_health_history: patientHealthHistory,
+            patient_school_life: patientSchoolLife,
+            patient_evaluation_behavior: patientEvaluationBehavior,
             user_ia_direction_conclusion: userIaDirectionConclusion,
           }),
         })
@@ -556,6 +571,9 @@ function GenerateReportPage() {
           input_data: formData[report.reportName] || {},
         })),
         patient_description: patientDescription,
+        patient_health_history: patientHealthHistory,
+        patient_school_life: patientSchoolLife,
+        patient_evaluation_behavior: patientEvaluationBehavior,
         user_ia_direction_conclusion: userIaDirectionConclusion,
         document_html: reportDocumentHtml,
       }
@@ -650,6 +668,39 @@ function GenerateReportPage() {
               value={patientDescription}
               onChange={(event) => setPatientDescription(event.target.value)}
               placeholder="Escreva aqui uma descrição sobre o paciente..."
+            />
+          </div>
+          <div className="section-divider" />
+          <div className="description-block">
+            <h2>Histórico de saúde</h2>
+            <textarea
+              className="description-textarea"
+              rows="4"
+              value={patientHealthHistory}
+              onChange={(event) => setPatientHealthHistory(event.target.value)}
+              placeholder="Escreva aqui o histórico de saúde do paciente..."
+            />
+          </div>
+          <div className="section-divider" />
+          <div className="description-block">
+            <h2>Vida Escolar</h2>
+            <textarea
+              className="description-textarea"
+              rows="4"
+              value={patientSchoolLife}
+              onChange={(event) => setPatientSchoolLife(event.target.value)}
+              placeholder="Escreva aqui a vida escolar do paciente..."
+            />
+          </div>
+          <div className="section-divider" />
+          <div className="description-block">
+            <h2>Comportamento durante a avaliação</h2>
+            <textarea
+              className="description-textarea"
+              rows="4"
+              value={patientEvaluationBehavior}
+              onChange={(event) => setPatientEvaluationBehavior(event.target.value)}
+              placeholder="Escreva aqui o comportamento do paciente durante a avaliação..."
             />
           </div>
           <div className="section-divider" />
