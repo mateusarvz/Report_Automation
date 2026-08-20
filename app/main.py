@@ -15,7 +15,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
-from playwright.sync_api import sync_playwright
 from docx import Document
 from docx.shared import Pt
 from docx.oxml import OxmlElement
@@ -25,6 +24,11 @@ from app.auth import login_user, logout_user, get_user_from_session, templates, 
 from app.config import get_settings
 from app.report_store import ensure_report_folders, save_dataframe, get_report_input_fields, get_report_folders
 from app.report_data import build_tac2_dataframes, build_tac2_text_report
+
+try:
+    from playwright.sync_api import sync_playwright
+except ModuleNotFoundError:  # pragma: no cover - depends on deploy image
+    sync_playwright = None
 
 if sys.platform.startswith('win') and hasattr(asyncio, 'WindowsProactorEventLoopPolicy'):
     asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
@@ -772,6 +776,11 @@ async def build_report_html_no_ai(client, patient, report_name: str, input_data:
 
 
 def _render_pdf_sync(html_page: str) -> bytes:
+    if sync_playwright is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Dependencia 'playwright' nao instalada no ambiente de deploy",
+        )
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         try:
@@ -1017,6 +1026,11 @@ def _build_editor_pdf_html(html_text: str) -> str:
 
 
 def _render_editor_pdf_sync(html_page: str) -> bytes:
+    if sync_playwright is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Dependencia 'playwright' nao instalada no ambiente de deploy",
+        )
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)
         try:
