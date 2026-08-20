@@ -71,24 +71,24 @@ def _build_pdf_header_html(patient: dict, profile: dict | None = None) -> str:
     profile = profile or {}
     return (
         '<div class="pdf-document">'
-        '<div style="font-size:16px; font-weight:700; color:#0f172a; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;">Relatório de Avaliação Neuropsicológica</div>'
-        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:9.5pt; margin-bottom:14px;">'
+        '<div style="font-size:17px; font-weight:700; color:#0f172a; text-align:center; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:12px;">Relatório de Avaliação Neuropsicológica</div>'
+        '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; font-size:10.5pt; margin-bottom:14px;">'
         f'<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Paciente</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:18%; font-size:10pt; font-weight:700; background:#e2e8f0;">Paciente</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:32%;">{escape(patient.get("full_name") or "Paciente")}</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:18%; font-weight:700; background:#e2e8f0;">Responsável</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:18%; font-size:10pt; font-weight:700; background:#e2e8f0;">Responsável</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; width:32%;">{escape(patient.get("responsavel") or "-")}</td>'
         f'</tr>'
         f'<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Idade</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Idade</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(age_text)}</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Profissional</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Profissional</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(profile.get("profession") or "-")}</td>'
         f'</tr>'
         f'<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Data de nascimento</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Data de nascimento</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(birth_date)}</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-weight:700; background:#e2e8f0;">Gênero</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Gênero</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(patient.get("gender") or "-")}</td>'
         f'</tr>'
         '</table>'
@@ -102,10 +102,10 @@ def _build_patient_description_html(patient_description: str) -> str:
     return (
         '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-weight:700;">Descrição do paciente</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Descrição do paciente</td>'
         '</tr>'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:9.5pt; line-height:1.55;">{description_html}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{description_html}</td>'
         '</tr>'
         '</table>'
     )
@@ -130,7 +130,7 @@ def _build_pdf_page_html(body_html: str) -> str:
       background: #fff;
     }}
     .pdf-document {{
-      font-size: 9.5pt;
+      font-size: 10.5pt;
       line-height: 1.45;
     }}
     .pdf-title {{
@@ -148,6 +148,8 @@ def _build_pdf_page_html(body_html: str) -> str:
     }}
     .block-table {{
       margin-bottom: 14px;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
     .block-table td {{
       border: 0.5px solid #cbd5e1;
@@ -166,6 +168,12 @@ def _build_pdf_page_html(body_html: str) -> str:
     }}
     .section-body {{
       padding: 8px 10px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }}
+    .section-body > * {{
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
     .report-title {{
       font-size: 11pt;
@@ -176,13 +184,23 @@ def _build_pdf_page_html(body_html: str) -> str:
     }}
     .report-box {{
       margin-bottom: 12px;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
     .report-box table {{
-      font-size: 9pt;
+      font-size: 10pt;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
     .report-box th, .report-box td {{
       border: 0.5px solid #cbd5e1;
       padding: 6px 8px;
+    }}
+    .report-box tr,
+    .report-box thead,
+    .report-box tbody {{
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
     .report-box thead th {{
       background: #e2e8f0;
@@ -194,6 +212,14 @@ def _build_pdf_page_html(body_html: str) -> str:
     .conclusion p {{
       margin: 0 0 8px 0;
       text-align: justify;
+      font-size: 10.75pt;
+      line-height: 1.6;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }}
+    .conclusion {{
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
   </style>
 </head>
@@ -646,7 +672,7 @@ async def _build_conclusion_html(patient: dict, report_results: list, patient_de
         user_ia_direction_conclusion=user_ia_direction_conclusion,
     )
     return (
-        '<table class="block-table" cellpadding="0" cellspacing="0">'
+        '<table class="block-table report-block" cellpadding="0" cellspacing="0">'
         '<tr>'
         '<td class="section-title">Síntese dos resultados</td>'
         '</tr>'
@@ -659,7 +685,7 @@ async def _build_conclusion_html(patient: dict, report_results: list, patient_de
 
 def _wrap_report_html(report_name: str, report_html: str) -> str:
     return (
-        '<table class="block-table report-box" cellpadding="0" cellspacing="0">'
+        '<table class="block-table report-box report-block" cellpadding="0" cellspacing="0">'
         '<tr>'
         f'<td class="section-title">{escape(report_name or "Relatório")}</td>'
         '</tr>'

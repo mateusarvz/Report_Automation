@@ -105,6 +105,25 @@ button {
     width: 100%;
 }
 
+.pdf-preview--large,
+.pdf-preview--xlarge {
+    width: min(100%, 1100px);
+    padding: 32px;
+}
+
+.pdf-preview--large iframe {
+    min-height: 1400px;
+}
+
+.pdf-preview--xlarge {
+    width: min(100%, 1300px);
+    padding: 40px;
+}
+
+.pdf-preview--xlarge iframe {
+    min-height: 1800px;
+}
+
 /* Bordas das tabelas de TODOS os relatórios mais finas.
    O pdf mostrado em HTML e o baixado são o mesmo elemento capturado pelo html2pdf,
    portanto esta regra vale para os dois e os mantém idênticos. O !important sobrescreve
@@ -186,7 +205,7 @@ button {
 .pdf-patient-table th,
 .pdf-patient-table td {
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.4;
     border: none;
 }
@@ -216,7 +235,7 @@ button {
 
 .pdf-patient-description h2 {
     margin: 0 0 10px;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
     color: #0f172a;
     text-transform: uppercase;
@@ -225,7 +244,7 @@ button {
 
 .pdf-patient-description p {
     margin: 0;
-    font-size: 12.5px;
+    font-size: 13.5px;
     line-height: 1.6;
     color: #1e293b;
     white-space: pre-wrap;

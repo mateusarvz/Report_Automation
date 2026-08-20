@@ -701,11 +701,11 @@ function GenerateReportPage() {
 
       {message && <p className="message">{message}</p>}
       {reportPdfUrl && (
-        <div className="card pdf-preview" style={{ marginTop: 20 }} ref={reportPreviewRef}>
+        <div className="card pdf-preview pdf-preview--xlarge" style={{ marginTop: 20 }} ref={reportPreviewRef}>
           <iframe
             title="Prévia do relatório"
             src={reportPdfUrl}
-            style={{ width: '100%', minHeight: '1100px', border: '0', background: '#fff' }}
+            style={{ width: '100%', minHeight: '1800px', border: '0', background: '#fff' }}
           />
         </div>
       )}

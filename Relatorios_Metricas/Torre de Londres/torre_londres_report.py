@@ -105,15 +105,15 @@ def _map_score(df: pd.DataFrame, raw_score, age):
 
 def _html_table(results_row):
     return (
-        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 9pt;\">"
+        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; break-inside: avoid; page-break-inside: avoid;\">"
         "<thead><tr>"
-        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
-        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
-        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%;\">Classifica\u00e7\u00e3o</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:left; break-inside: avoid; page-break-inside: avoid;\">Indicador</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%; break-inside: avoid; page-break-inside: avoid;\">Score</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%; break-inside: avoid; page-break-inside: avoid;\">Classifica\u00e7\u00e3o</th>"
         "</tr></thead><tbody>"
-        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o Total</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['total_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['total_categoria']}</td></tr>"
-        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o nos itens de 4 movimentos</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m4_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m4_categoria']}</td></tr>"
-        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Pontua\u00e7\u00e3o nos itens de 5 movimentos</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m5_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['m5_categoria']}</td></tr>"
+        f"<tr style=\"break-inside: avoid; page-break-inside: avoid;\"><td style=\"border: 0.5px solid #000000; padding:8px; break-inside: avoid; page-break-inside: avoid;\">Pontua\u00e7\u00e3o Total</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['total_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['total_categoria']}</td></tr>"
+        f"<tr style=\"break-inside: avoid; page-break-inside: avoid;\"><td style=\"border: 0.5px solid #000000; padding:8px; break-inside: avoid; page-break-inside: avoid;\">Pontua\u00e7\u00e3o nos itens de 4 movimentos</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['m4_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['m4_categoria']}</td></tr>"
+        f"<tr style=\"break-inside: avoid; page-break-inside: avoid;\"><td style=\"border: 0.5px solid #000000; padding:8px; break-inside: avoid; page-break-inside: avoid;\">Pontua\u00e7\u00e3o nos itens de 5 movimentos</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['m5_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['m5_categoria']}</td></tr>"
         "</tbody></table>"
     )
 
@@ -148,12 +148,12 @@ def build_torre_londres_report(client, patient_id, patient_name, input_data, rep
     }
 
     html_text = (
-        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827; font-size:9.5pt;\">"
-        "<p style=\"margin:0 0 10px 0; text-align:justify;\">"
+        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827; font-size:10.5pt; break-inside: avoid; page-break-inside: avoid;\">"
+        "<p style=\"margin:0 0 10px 0; text-align:justify; font-size:10.75pt; line-height:1.55; break-inside: avoid; page-break-inside: avoid;\">"
         "<strong>ToL (Teste da Torre de Londres)</strong> \u00e9 um instrumento neuropsicol\u00f3gico que avalia fun\u00e7\u00f5es executivas, "
         "principalmente planejamento e resolu\u00e7\u00e3o de problemas, atrav\u00e9s de tarefas como mover pe\u00e7as entre pinos seguindo regras espec\u00edficas."
         "</p>"
-        f"{_html_table(row_data)}"
+        f"<div style=\"break-inside: avoid; page-break-inside: avoid;\">{_html_table(row_data)}</div>"
         "</div>\n"
     )
     return html_text

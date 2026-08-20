@@ -1,5 +1,5 @@
-from pathlib import Path
 from datetime import date, datetime
+from pathlib import Path
 import html
 
 import numpy as np
@@ -81,15 +81,15 @@ def _map_score(df: pd.DataFrame, raw_score, age):
 
 def _html_table(results_row):
     return (
-        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 9pt;\">"
+        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; break-inside: avoid; page-break-inside: avoid;\">"
         "<thead><tr>"
-        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:left;\">Indicador</th>"
-        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%;\">Score</th>"
-        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%;\">Classificação</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:left; break-inside: avoid; page-break-inside: avoid;\">Indicador</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%; break-inside: avoid; page-break-inside: avoid;\">Score</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%; break-inside: avoid; page-break-inside: avoid;\">Classificação</th>"
         "</tr></thead><tbody>"
-        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Parte A</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_a_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_a_categoria']}</td></tr>"
-        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Parte B</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_b_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_b_categoria']}</td></tr>"
-        f"<tr><td style=\"border: 0.5px solid #000000; padding:8px;\">Parte B-A</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_ba_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center;\">{results_row['parte_ba_categoria']}</td></tr>"
+        f"<tr style=\"break-inside: avoid; page-break-inside: avoid;\"><td style=\"border: 0.5px solid #000000; padding:8px; break-inside: avoid; page-break-inside: avoid;\">Parte A</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['parte_a_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['parte_a_categoria']}</td></tr>"
+        f"<tr style=\"break-inside: avoid; page-break-inside: avoid;\"><td style=\"border: 0.5px solid #000000; padding:8px; break-inside: avoid; page-break-inside: avoid;\">Parte B</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['parte_b_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['parte_b_categoria']}</td></tr>"
+        f"<tr style=\"break-inside: avoid; page-break-inside: avoid;\"><td style=\"border: 0.5px solid #000000; padding:8px; break-inside: avoid; page-break-inside: avoid;\">Parte B-A</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['parte_ba_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['parte_ba_categoria']}</td></tr>"
         "</tbody></table>"
     )
 
@@ -103,9 +103,6 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
         "parte_ba": report_dir / "Teste_deTrilhas_Correção_Parte_B-A.csv",
     }
     dfs = {k: _read_csv_numeric(v) for k, v in paths.items()}
-    # The backend injects the patient's age via input_data["_patient_age"]
-    # because this module is normally called without the DB client. Prefer it
-    # and fall back to the client lookup for callers that do pass one.
     age = input_data.get("_patient_age")
     if age is None:
         age = _compute_age_from_client(client, patient_id)
@@ -120,9 +117,9 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
     note_html = ""
     if note_text:
         note_html = (
-            '<div style="margin-top:16px;">'
-            '<h3 style="margin:0 0 8px 0; font-size:11pt;">Instruções para a IA</h3>'
-            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:10px; border-radius:6px; font-size:9pt; line-height:1.5;">{_escape_html(note_text)}</div>'
+            '<div style="margin-top:16px; break-inside: avoid; page-break-inside: avoid;">'
+            '<h3 style="margin:0 0 8px 0; font-size:12pt; break-inside: avoid; page-break-inside: avoid;">Instruções para a IA</h3>'
+            f'<div style="white-space: pre-wrap; border:1px solid #d1d5db; background:#f8fafc; padding:10px; border-radius:6px; font-size:10pt; line-height:1.5; break-inside: avoid; page-break-inside: avoid;">{_escape_html(note_text)}</div>'
             '</div>'
         )
 
@@ -142,12 +139,12 @@ def build_teste_trilhas_report(client, patient_id, patient_name, input_data, rep
     }])
 
     html = (
-        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827; font-size:9.5pt;\">"
-        "<p style=\"margin:0 0 10px 0; text-align:justify;\">"
+        "<div style=\"font-family: Arial, Helvetica, sans-serif; color:#111827; font-size:10.5pt; break-inside: avoid; page-break-inside: avoid;\">"
+        "<p style=\"margin:0 0 10px 0; text-align:justify; font-size:10.75pt; line-height:1.55; break-inside: avoid; page-break-inside: avoid;\">"
         "<strong>Teste de Trilhas</strong> é um instrumento indicado para avaliar atenção e funções executivas. "
         "Enquanto a Parte A mede atenção concentrada e velocidade ao ligar números em ordem, a Parte B mede flexibilidade cognitiva e atenção alternada ao intercalar números e letras."
         "</p>"
-        f"{_html_table({'parte_a_score': f'{score_a:.0f}' if pd.notna(score_a) else 'N/A', 'parte_a_categoria': classify_score_metric(score_a) or 'N/A', 'parte_b_score': f'{score_b:.0f}' if pd.notna(score_b) else 'N/A', 'parte_b_categoria': classify_score_metric(score_b) or 'N/A', 'parte_ba_score': f'{score_ba:.0f}' if pd.notna(score_ba) else 'N/A', 'parte_ba_categoria': classify_score_metric(score_ba) or 'N/A'})}"
+        f"<div style=\"break-inside: avoid; page-break-inside: avoid;\">{_html_table({'parte_a_score': f'{score_a:.0f}' if pd.notna(score_a) else 'N/A', 'parte_a_categoria': classify_score_metric(score_a) or 'N/A', 'parte_b_score': f'{score_b:.0f}' if pd.notna(score_b) else 'N/A', 'parte_b_categoria': classify_score_metric(score_b) or 'N/A', 'parte_ba_score': f'{score_ba:.0f}' if pd.notna(score_ba) else 'N/A', 'parte_ba_categoria': classify_score_metric(score_ba) or 'N/A'})}</div>"
         "</div>\n"
     )
     return html
