@@ -107,7 +107,7 @@ def _build_prompt(
         "Você está escrevendo a seção 'Síntese dos resultados' de um relatório de avaliação neuropsicológica.\n"
         f"A prioridade máxima é a DIREÇÃO DO PROFISSIONAL escrita pelo usuario em: {direction_block}.\n"
         "Use essa direção como eixo principal da síntese e como guia da redação final.\n"
-        "Use de 50 a 300 palavras.\n"
+        "Use de 100 a 600 palavras.\n"
 
         "NÃO FAÇA O SEGUINTE:\n"
         "Não cite a idade do paciente de forma explícita.\n"

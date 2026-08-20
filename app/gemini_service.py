@@ -1,4 +1,5 @@
 import os
+import asyncio
 from pathlib import Path
 import httpx
 
@@ -74,16 +75,36 @@ async def generate_interpretation(report_name: str, observations: str, table_htm
         ]
     }
 
+    retry_statuses = {429, 500, 502, 503, 504}
+    last_error = None
+
     async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(url, json=json_payload, timeout=60.0)
-            response.raise_for_status()
-            data = response.json()
-            generated_text = data['candidates'][0]['content']['parts'][0]['text']
-            
-            # Format generated markdown/text to HTML paragraphs cleanly
-            paragraphs = generated_text.strip().split("\n\n")
-            html_content = "".join(f"<p>{p.strip()}</p>" for p in paragraphs if p.strip())
-            return html_content
-        except Exception as e:
-            return f"<p><em>Erro ao gerar interpretação via Gemini: {str(e)}</em></p>"
+        for attempt in range(3):
+            try:
+                response = await client.post(url, json=json_payload, timeout=60.0)
+                if response.status_code in retry_statuses:
+                    last_error = httpx.HTTPStatusError(
+                        f"Server error '{response.status_code} {response.reason_phrase}' for url '{url}'",
+                        request=response.request,
+                        response=response,
+                    )
+                    raise last_error
+                response.raise_for_status()
+                data = response.json()
+                generated_text = data['candidates'][0]['content']['parts'][0]['text']
+
+                # Format generated markdown/text to HTML paragraphs cleanly
+                paragraphs = generated_text.strip().split("\n\n")
+                html_content = "".join(f"<p>{p.strip()}</p>" for p in paragraphs if p.strip())
+                return html_content
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError, KeyError, IndexError, ValueError) as exc:
+                last_error = exc
+                if attempt < 2:
+                    await asyncio.sleep(1.5 * (2 ** attempt))
+                    continue
+                break
+            except Exception as exc:
+                last_error = exc
+                break
+
+    return f"<p><em>Erro ao gerar interpretação via Gemini: {str(last_error)}</em></p>"

@@ -105,10 +105,10 @@ def _map_score(df: pd.DataFrame, raw_score, age):
 
 def _html_table(results_row):
     return (
-        "<table style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; break-inside: avoid; page-break-inside: avoid;\">"
+        "<table class=\"metric-table\" style=\"width:100%; border-collapse:collapse; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; break-inside: avoid; page-break-inside: avoid;\">"
         "<thead><tr>"
         "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:left; break-inside: avoid; page-break-inside: avoid;\">Indicador</th>"
-        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%; break-inside: avoid; page-break-inside: avoid;\">Score</th>"
+        "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:18%; break-inside: avoid; page-break-inside: avoid;\">Pontuação</th>"
         "<th style=\"border: 0.5px solid #000000; background:#e2e8f0; padding:8px; text-align:center; width:22%; break-inside: avoid; page-break-inside: avoid;\">Classifica\u00e7\u00e3o</th>"
         "</tr></thead><tbody>"
         f"<tr style=\"break-inside: avoid; page-break-inside: avoid;\"><td style=\"border: 0.5px solid #000000; padding:8px; break-inside: avoid; page-break-inside: avoid;\">Pontua\u00e7\u00e3o Total</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['total_score']}</td><td style=\"border: 0.5px solid #000000; padding:8px; text-align:center; break-inside: avoid; page-break-inside: avoid;\">{results_row['total_categoria']}</td></tr>"

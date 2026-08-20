@@ -266,12 +266,44 @@ def _build_pdf_page_html(body_html: str) -> str:
     .report-box tr,
     .report-box thead,
     .report-box tbody {{
+      break-inside: auto;
+      page-break-inside: auto;
+    }}
+    .report-segment {{
+      break-inside: auto;
+      page-break-inside: auto;
+    }}
+    .report-segment--intro {{
+      break-after: auto;
+      page-break-after: auto;
+    }}
+    .report-segment--table {{
+      break-before: auto;
+      break-after: auto;
+      page-break-before: auto;
+      page-break-after: auto;
+    }}
+    .report-segment--gemini {{
+      break-before: auto;
+      page-break-before: auto;
+    }}
+    .metric-table {{
+      break-inside: avoid;
+      page-break-inside: avoid;
+      display: inline-table;
+      width: 100%;
+    }}
+    .metric-table thead,
+    .metric-table tbody,
+    .metric-table tr {{
       break-inside: avoid;
       page-break-inside: avoid;
     }}
-    .report-block tr:first-child {{
-      break-after: avoid-page;
-      page-break-after: avoid;
+    .table-keep-together {{
+      break-inside: avoid;
+      page-break-inside: avoid;
+      display: inline-block;
+      width: 100%;
     }}
     .report-box p,
     .report-box div,
@@ -644,7 +676,7 @@ async def create_report(request: Request):
         else:
             report_text += ai_html
 
-        return HTMLResponse(report_text)
+        return HTMLResponse(_segment_report_html(_protect_report_tables_html(report_text)))
 
     return {"ok": True, "report_name": report_name, "patient_id": patient_id}
 
@@ -701,7 +733,7 @@ async def build_report_html(client, patient, report_name: str, input_data: dict)
     else:
         report_text += ai_html
 
-    return report_text
+    return _segment_report_html(_protect_report_tables_html(report_text))
 
 
 async def build_report_html_no_ai(client, patient, report_name: str, input_data: dict) -> str:
@@ -736,7 +768,7 @@ async def build_report_html_no_ai(client, patient, report_name: str, input_data:
     if not report_text:
         raise HTTPException(status_code=400, detail="RelatÃ³rio vazio")
 
-    return report_text
+    return _protect_report_tables_html(report_text)
 
 
 def _render_pdf_sync(html_page: str) -> bytes:
@@ -802,6 +834,34 @@ def _wrap_report_html(report_name: str, report_html: str) -> str:
         '</tr>'
         '</table>'
     )
+
+
+def _segment_report_html(report_html: str) -> str:
+    report_html = report_html or ""
+    table_match = re.search(r"<table\b.*?</table>", report_html, re.DOTALL | re.IGNORECASE)
+    if not table_match:
+        return f'<div class="report-segment report-segment--intro">{report_html}</div>'
+
+    intro_html = report_html[:table_match.start()]
+    table_html = table_match.group(0)
+    tail_html = report_html[table_match.end():]
+
+    segments = []
+    if intro_html.strip():
+        segments.append(f'<div class="report-segment report-segment--intro">{intro_html}</div>')
+    segments.append(f'<div class="report-segment report-segment--table">{table_html}</div>')
+    if tail_html.strip():
+        segments.append(f'<div class="report-segment report-segment--gemini">{tail_html}</div>')
+    return "".join(segments)
+
+
+def _protect_report_tables_html(report_html: str) -> str:
+    report_html = report_html or ""
+
+    def wrap_table(match):
+        return f'<div class="table-keep-together">{match.group(0)}</div>'
+
+    return re.sub(r"<table\b.*?</table>", wrap_table, report_html, flags=re.DOTALL | re.IGNORECASE)
 
 
 class _SimpleHtmlBlockParser(HTMLParser):
