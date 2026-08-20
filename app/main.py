@@ -225,14 +225,17 @@ def _build_pdf_page_html(body_html: str) -> str:
     .section-body {{
       padding: 8px 10px;
       font-size: 11pt;
-      break-before: avoid-page;
-      page-break-before: avoid;
       break-inside: auto;
       page-break-inside: auto;
     }}
     .section-body > * {{
       break-inside: auto;
       page-break-inside: auto;
+    }}
+    .section-body > :first-child {{
+      break-before: avoid-page;
+      page-break-before: avoid;
+      margin-top: 0;
     }}
     .report-title {{
       font-size: 11pt;
@@ -269,10 +272,6 @@ def _build_pdf_page_html(body_html: str) -> str:
     .report-block tr:first-child {{
       break-after: avoid-page;
       page-break-after: avoid;
-    }}
-    .report-block tr:last-child {{
-      break-before: avoid-page;
-      page-break-before: avoid;
     }}
     .report-box p,
     .report-box div,
@@ -313,6 +312,11 @@ def _build_pdf_page_html(body_html: str) -> str:
       font-size: 11.5pt;
       break-inside: auto;
       page-break-inside: auto;
+    }}
+    .conclusion > :first-child {{
+      break-before: avoid-page;
+      page-break-before: avoid;
+      margin-top: 0;
     }}
   </style>
 </head>
@@ -839,6 +843,13 @@ class _SimpleHtmlBlockParser(HTMLParser):
 def _html_to_docx_bytes(html_text: str) -> bytes:
     parser = _SimpleHtmlBlockParser()
     parser.feed(html_text or '')
+    block_titles = {
+        'descrição do paciente',
+        'histórico de saúde',
+        'vida escolar',
+        'comportamento durante a avaliação',
+        'síntese dos resultados',
+    }
 
     def mark_paragraph(paragraph, keep_together=True, keep_with_next=False):
         fmt = paragraph.paragraph_format
@@ -863,15 +874,12 @@ def _html_to_docx_bytes(html_text: str) -> bytes:
         if tag == 'h1':
             paragraph = doc.add_heading(cleaned, level=1)
             mark_paragraph(paragraph, keep_together=True, keep_with_next=True)
-            previous_heading = paragraph
         elif tag == 'h2':
             paragraph = doc.add_heading(cleaned, level=2)
             mark_paragraph(paragraph, keep_together=True, keep_with_next=True)
-            previous_heading = paragraph
         elif tag == 'h3':
             paragraph = doc.add_heading(cleaned, level=3)
             mark_paragraph(paragraph, keep_together=True, keep_with_next=True)
-            previous_heading = paragraph
         elif tag == 'li':
             paragraph = doc.add_paragraph(cleaned, style='List Bullet')
             mark_paragraph(paragraph, keep_together=True)
@@ -880,7 +888,8 @@ def _html_to_docx_bytes(html_text: str) -> bytes:
             mark_paragraph(paragraph, keep_together=True)
         else:
             paragraph = doc.add_paragraph(cleaned)
-            mark_paragraph(paragraph, keep_together=True)
+            keep_next = cleaned.lower() in block_titles
+            mark_paragraph(paragraph, keep_together=True, keep_with_next=keep_next)
 
     for table in doc.tables:
         for row in table.rows:

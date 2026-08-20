@@ -7,6 +7,13 @@ function htmlToDocxParagraphs(html) {
   const parser = new DOMParser()
   const doc = parser.parseFromString(html || '', 'text/html')
   const blocks = Array.from(doc.body.children)
+  const blockTitles = new Set([
+    'descrição do paciente',
+    'histórico de saúde',
+    'vida escolar',
+    'comportamento durante a avaliação',
+    'síntese dos resultados',
+  ])
 
   const walkInline = (node, inherited = {}) => {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -27,9 +34,11 @@ function htmlToDocxParagraphs(html) {
   for (const block of blocks) {
     const tag = block.tagName.toLowerCase()
     if (tag === 'div' || tag === 'p' || tag === 'h1' || tag === 'h2' || tag === 'h3' || tag === 'h4') {
+      const text = block.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() || ''
       paragraphs.push(
         new Paragraph({
           heading: tag === 'h1' ? HeadingLevel.HEADING_1 : tag === 'h2' ? HeadingLevel.HEADING_2 : undefined,
+          keepWithNext: blockTitles.has(text),
           children: walkInline(block),
         })
       )
@@ -41,6 +50,7 @@ function htmlToDocxParagraphs(html) {
         paragraphs.push(
           new Paragraph({
             bullet: tag === 'ul' ? { level: 0 } : undefined,
+            keepWithNext: false,
             children: walkInline(li),
           })
         )
@@ -48,7 +58,8 @@ function htmlToDocxParagraphs(html) {
       continue
     }
 
-    paragraphs.push(new Paragraph({ children: walkInline(block) }))
+    const text = block.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() || ''
+    paragraphs.push(new Paragraph({ keepWithNext: blockTitles.has(text), children: walkInline(block) }))
   }
 
   return paragraphs.length ? paragraphs : [new Paragraph('')]
