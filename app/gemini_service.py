@@ -42,7 +42,7 @@ async def generate_interpretation(report_name: str, observations: str, table_htm
     prompt = (
         "INSTRUÇÃO PRINCIPAL (CRÍTICA):\n"
         "Atue como um profissional de neuropedagogia. Ultilize linguagem formal, profissional para a área de psicologia."
-        f"{"Gere de 5 e 10 palavras" if observations else "Gere entre 10 e 20 palavras"} "
+        f"{"Gere de 5 e 20 palavras" if observations else "Gere entre 15 e 50 palavras"} "
         "Evite dar diagnosticos."
         "Atue sempre como se você estivesse escrevendo a sua interpretação dos resultados.\n\n"
 

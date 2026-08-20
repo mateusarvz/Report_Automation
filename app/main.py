@@ -85,14 +85,14 @@ def _build_pdf_header_html(patient: dict, profile: dict | None = None) -> str:
         f'<tr>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Idade</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(age_text)}</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Profissional</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(professional_text)}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Gênero</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(patient.get("gender") or "-")}</td>'
         f'</tr>'
         f'<tr>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Data de nascimento</td>'
         f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(birth_date)}</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Gênero</td>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(patient.get("gender") or "-")}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px; font-size:10pt; font-weight:700; background:#e2e8f0;">Profissional</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:7px 8px;">{escape(professional_text)}</td>'
         f'</tr>'
         '</table>'
     )
@@ -105,10 +105,10 @@ def _build_patient_description_html(patient_description: str) -> str:
     return (
         '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Descrição do paciente</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11.5pt; font-weight:700;">Descrição do paciente</td>'
         '</tr>'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{description_html}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:11pt; line-height:1.6;">{description_html}</td>'
         '</tr>'
         '</table>'
     )
@@ -121,10 +121,10 @@ def _build_patient_history_html(patient_health_history: str) -> str:
     return (
         '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Histórico de saúde</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11.5pt; font-weight:700;">Histórico de saúde</td>'
         '</tr>'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{history_html}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:11pt; line-height:1.6;">{history_html}</td>'
         '</tr>'
         '</table>'
     )
@@ -137,10 +137,10 @@ def _build_patient_school_life_html(patient_school_life: str) -> str:
     return (
         '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Vida Escolar</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11.5pt; font-weight:700;">Vida Escolar</td>'
         '</tr>'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{school_life_html}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:11pt; line-height:1.6;">{school_life_html}</td>'
         '</tr>'
         '</table>'
     )
@@ -153,10 +153,10 @@ def _build_patient_evaluation_behavior_html(patient_evaluation_behavior: str) ->
     return (
         '<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:14px;">'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11pt; font-weight:700;">Comportamento durante a avaliação</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; background:#f8fafc; font-size:11.5pt; font-weight:700;">Comportamento durante a avaliação</td>'
         '</tr>'
         '<tr>'
-        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:10.5pt; line-height:1.55;">{behavior_html}</td>'
+        f'<td style="border:0.5px solid {PDF_BORDER_COLOR}; padding:8px 10px; font-size:11pt; line-height:1.6;">{behavior_html}</td>'
         '</tr>'
         '</table>'
     )
@@ -169,7 +169,7 @@ def _build_pdf_page_html(body_html: str) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    @page {{ size: A4; margin: 14mm; }}
+    @page {{ size: A4; margin: 14mm 20mm; }}
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
@@ -199,8 +199,8 @@ def _build_pdf_page_html(body_html: str) -> str:
     }}
     .block-table {{
       margin-bottom: 14px;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      break-inside: auto;
+      page-break-inside: auto;
     }}
     .block-table td {{
       border: 0.5px solid #cbd5e1;
@@ -215,16 +215,24 @@ def _build_pdf_page_html(body_html: str) -> str:
     .section-title {{
       background: #e2e8f0;
       font-weight: 700;
+      font-size: 11.5pt;
       text-transform: uppercase;
+      break-after: avoid-page;
+      page-break-after: avoid;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
     .section-body {{
       padding: 8px 10px;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      font-size: 11pt;
+      break-before: avoid-page;
+      page-break-before: avoid;
+      break-inside: auto;
+      page-break-inside: auto;
     }}
     .section-body > * {{
-      break-inside: avoid;
-      page-break-inside: avoid;
+      break-inside: auto;
+      page-break-inside: auto;
     }}
     .report-title {{
       font-size: 11pt;
@@ -232,24 +240,57 @@ def _build_pdf_page_html(body_html: str) -> str:
       margin: 0 0 8px 0;
       text-transform: uppercase;
       letter-spacing: 0.02em;
+      break-after: avoid-page;
+      page-break-after: avoid;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }}
     .report-box {{
-      margin-bottom: 12px;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      margin-bottom: 18px;
+      font-size: 11pt;
+      break-inside: auto;
+      page-break-inside: auto;
     }}
     .report-box table {{
-      font-size: 10pt;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      font-size: 11pt;
+      break-inside: auto;
+      page-break-inside: auto;
     }}
     .report-box th, .report-box td {{
       border: 0.5px solid #cbd5e1;
-      padding: 6px 8px;
+      padding: 7px 9px;
     }}
     .report-box tr,
     .report-box thead,
     .report-box tbody {{
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }}
+    .report-block tr:first-child {{
+      break-after: avoid-page;
+      page-break-after: avoid;
+    }}
+    .report-block tr:last-child {{
+      break-before: avoid-page;
+      page-break-before: avoid;
+    }}
+    .report-box p,
+    .report-box div,
+    .report-box ul,
+    .report-box ol,
+    .report-box li {{
+      font-size: 11pt;
+      break-inside: auto !important;
+      page-break-inside: auto !important;
+    }}
+    .report-box h1,
+    .report-box h2,
+    .report-box h3,
+    .report-box h4,
+    .report-box h5,
+    .report-box h6 {{
+      break-after: avoid-page;
+      page-break-after: avoid;
       break-inside: avoid;
       page-break-inside: avoid;
     }}
@@ -263,14 +304,15 @@ def _build_pdf_page_html(body_html: str) -> str:
     .conclusion p {{
       margin: 0 0 8px 0;
       text-align: justify;
-      font-size: 10.75pt;
-      line-height: 1.6;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      font-size: 11.5pt;
+      line-height: 1.65;
+      break-inside: auto;
+      page-break-inside: auto;
     }}
     .conclusion {{
-      break-inside: avoid;
-      page-break-inside: avoid;
+      font-size: 11.5pt;
+      break-inside: auto;
+      page-break-inside: auto;
     }}
   </style>
 </head>
@@ -702,7 +744,7 @@ def _render_pdf_sync(html_page: str) -> bytes:
             return page.pdf(
                 format="A4",
                 print_background=True,
-                margin={"top": "14mm", "right": "14mm", "bottom": "14mm", "left": "14mm"},
+                margin={"top": "14mm", "right": "16mm", "bottom": "14mm", "left": "16mm"},
             )
         finally:
             browser.close()
@@ -1016,7 +1058,7 @@ async def create_reports_pdf_html(request: Request):
         raise HTTPException(status_code=404, detail='Paciente n\u00e3o encontrado')
     patient = raw_data[0]
 
-    profile_resp = client.table('profiles').select('id, profession').eq('id', user['id']).limit(1).execute()
+    profile_resp = client.table('profiles').select('id, full_name, profession').eq('id', user['id']).limit(1).execute()
     if getattr(profile_resp, 'error', None):
         raise HTTPException(status_code=500, detail=str(profile_resp.error))
     profile_rows = getattr(profile_resp, 'data', []) or []
@@ -1088,7 +1130,7 @@ async def create_reports_editor_html(request: Request):
         raise HTTPException(status_code=404, detail='Paciente n\u00e3o encontrado')
     patient = raw_data[0]
 
-    profile_resp = client.table('profiles').select('id, profession').eq('id', user['id']).limit(1).execute()
+    profile_resp = client.table('profiles').select('id, full_name, profession').eq('id', user['id']).limit(1).execute()
     if getattr(profile_resp, 'error', None):
         raise HTTPException(status_code=500, detail=str(profile_resp.error))
     profile_rows = getattr(profile_resp, 'data', []) or []

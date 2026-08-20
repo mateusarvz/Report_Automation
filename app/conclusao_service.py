@@ -105,47 +105,32 @@ def _build_prompt(
         "INSTRUÇÃO PRINCIPAL (CRÍTICA):\n"
         "Atue como um profissional de neuropsicologia.\n"
         "Você está escrevendo a seção 'Síntese dos resultados' de um relatório de avaliação neuropsicológica.\n"
-        "A prioridade máxima é a DIREÇÃO DO PROFISSIONAL para esta conclusão.\n"
+        f"A prioridade máxima é a DIREÇÃO DO PROFISSIONAL escrita pelo usuario em: {direction_block}.\n"
         "Use essa direção como eixo principal da síntese e como guia da redação final.\n"
-        "Escreva um texto fluido e dinâmico que integre os resultados de todos os testes aplicados e "
-        "só depois incorpore o contexto clínico do paciente como apoio secundário.\n"
-        "Varie o tamanho das frases, alterne períodos curtos e longos, e use conectivos e transições "
-        "naturais para dar ritmo à leitura. Evite começar parágrafos sempre da mesma forma e evite "
-        "repetir as mesmas estruturas; o texto deve ser coeso, envolvente e fluido, porém sempre com "
-        "tom formal e profissional.\n"
-        "Use de 10 a 20 palavras.\n"
+        "Use de 50 a 300 palavras.\n"
 
         "NÃO FAÇA O SEGUINTE:\n"
-        "Não detalhe exaustivamente os números de cada teste.\n"
         "Não cite a idade do paciente de forma explícita.\n"
         "Não repita o conteúdo dos relatórios; apenas sintetize-os de forma coesa.\n\n"
 
         "CONTEXTO CLÍNICO DO PACIENTE, USAR COMO APOIO SECUNDÁRIO:\n"
         "Descrição do Paciente (escrita pelo profissional):\n"
         f"{patient_description or 'Nenhuma descrição inserida.'}\n"
-        "Use apenas como informação relevante, sem sobrepor a direção do profissional.\n\n"
 
         "Histórico de Saúde (escrito pelo profissional):\n"
         f"{patient_health_history or 'Nenhum histórico de saúde inserido.'}\n"
-        "Use apenas como contexto clínico relevante, sem prioridade sobre a direção do profissional.\n\n"
 
         "Vida Escolar (escrito pelo profissional):\n"
         f"{patient_school_life or 'Nenhuma informação escolar inserida.'}\n"
-        "Use apenas como contexto relevante, sem prioridade sobre a direção do profissional.\n\n"
 
         "Comportamento Durante a Avaliação (escrito pelo profissional):\n"
         f"{patient_evaluation_behavior or 'Nenhum comportamento registrado.'}\n"
-        "Use apenas como observação complementar, sem prioridade sobre a direção do profissional.\n\n"
-
-        "DIREÇÃO DO PROFISSIONAL PARA ESTA CONCLUSÃO:\n"
-        f"{direction_block}\n"
 
         "RESULTADOS E DIRETRIZES DOS TESTES SELECIONADOS:\n"
         f"{directions_text}\n"
 
         + "\nProduza apenas a síntese, em texto corrido e em parágrafos de texto puro, "
-          "sem títulos, sem listas, sem símbolos de markdown e sem textos introdutórios "
-          "como 'A síntese é:' ou 'Aqui está a síntese'."
+          "sem títulos, sem listas, sem símbolos de markdown e sem textos introdutórios. SEJA SEMPRE DIRETO E OBJETIVO"
     )
     return prompt
 
